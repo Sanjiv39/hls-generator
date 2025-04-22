@@ -1,0 +1,10 @@
+test/*
+bre/*
+**/*.zip
+**/*.mkv
+**/*.mp4
+
+node_modules/*
+dist/*
+config.js
+metadata.json
