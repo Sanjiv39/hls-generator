@@ -1,11 +1,28 @@
 import { FfprobeStream, FfprobeData } from "fluent-ffmpeg";
 
-export type FfMetaData = FfprobeData &
-  Partial<{
-    videos: (FfprobeStream & { codec_type: "video" })[];
-    audios: (FfprobeStream & { codec_type: "audio" })[];
-    subtitles: (FfprobeStream & { codec_type: "subtitle" })[];
-  }>;
+export type FfmpegTags = Partial<{
+  language: string;
+  title: string;
+  BPS: string;
+  DURATION: string;
+  NUMBER_OF_FRAMES: string;
+  NUMBER_OF_BYTES: string;
+  _STATISTICS_WRITING_APP: string;
+  _STATISTICS_WRITING_DATE_UTC: string;
+  _STATISTICS_TAGS: string;
+}>;
+
+export type FfProbeStreamTagged = FfprobeStream & Partial<{ tags: FfmpegTags }>;
+
+export type FfMetaData = {
+  [K in keyof FfprobeData]: K extends "streams"
+    ? FfProbeStreamTagged[]
+    : FfprobeData[K];
+} & Partial<{
+  videos: (FfProbeStreamTagged & { codec_type: "video" })[];
+  audios: (FfProbeStreamTagged & { codec_type: "audio" })[];
+  subtitles: (FfProbeStreamTagged & { codec_type: "subtitle" })[];
+}>;
 
 export type DeviceType = "nvidia" | "amd" | "intel";
 export type FfOptions<D extends DeviceType = "intel"> = {

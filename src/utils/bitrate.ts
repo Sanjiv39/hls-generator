@@ -35,14 +35,27 @@ export function calculateAllBitrates(
 
     const bitrates: Partial<Record<keyof typeof resolutionPixels, number>> = {};
     const pixels = resolutionPixels[resolution.key];
-    bitrate = Math.max(
-      bitrate || 0,
-      (pixels / resolutionPixels.x1080) * 320000
+    if (Number.isNaN(String(bitrate)) || !bitrate || bitrate <= 0) {
+      bitrate = Math.max(
+        bitrate || 0,
+        (pixels / resolutionPixels.x1080) * 320000
+      );
+    }
+
+    console.log(
+      "Max bitrate : ",
+      bitrate,
+      "for",
+      resolution.width,
+      "x",
+      resolution.height
     );
 
     for (let res in resolutionPixels) {
-      //@ts-ignore
-      if ((resolutionPixels[res] as number) > resolution.height) {
+      if (
+        //@ts-ignore
+        (resolutionPixels[res] as number) > resolutionPixels[resolution.key]
+      ) {
         continue;
       }
       //@ts-ignore
