@@ -34,6 +34,17 @@ export type Presets<D extends Device = "none"> = D extends "nvidia"
   ? AMDPresets
   : IntelPresets;
 
+export type VideoMapping = {
+  name: string;
+  bitrate: string | number;
+  res: string;
+};
+export type AudioMapping = {
+  name: string;
+  bitrate: string | number;
+  channels: 1 | 2;
+};
+
 export type Config<D extends Device = "none"> = {
   /**
    * @description Relative/absolute input video file. Relative to the process directory until set `inputAbsolute` as **true**
@@ -116,15 +127,13 @@ export type Config<D extends Device = "none"> = {
 
   /**
    *  @description Custom video output mappings respective to their resolutions fetched from metadata. Array or null. By default gives mappings of highest resolution till 360p
-   * @type {{res?: string, bitrate?: string, name?: string}[]|null}
    * @example [{res: "1280x720p", bitrate: "1200k", name: "HD"}]
    */
-  videoMappings: null;
+  videoMappings: VideoMapping[] | null | undefined;
 
   /**
    *  @description Custom audio output mappings respective to their indexes fetched from metadata. Array or null. By default gives mappings with indiced names and metadata based settings
-   * @type {{name?: string, bitrate?: string, channels?: 1 | 2 }[]|null}
    * @example [{name: "eng", bitrate: "192k", channels: 2}]
    */
-  audioMappings: null;
+  audioMappings: AudioMapping[] | null | undefined;
 };
