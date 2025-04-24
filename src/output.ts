@@ -28,9 +28,11 @@ const inputFile =
     ? config.input
     : path.join(import.meta.dirname, config.input || "")) || "";
 const outputFolder =
+  config.outputDir ||
   (config.outputAbsolute
-    ? config.input
-    : path.join(import.meta.dirname, config.input || "out")) || "";
+    ? config.outputDir
+    : path.join(import.meta.dirname, config.outputDir || "out")) ||
+  "";
 const ffmpegInput = Ffmpeg(inputFile);
 
 const generateOutput = async () => {
@@ -197,15 +199,15 @@ const generateOutput = async () => {
           writeFileSync("./command.sh", commandLine);
         })
         .on("progress", (progress) => {
-          console.log(
-            `Video process progress => ${
-              progress.percent?.toFixed(2) || 0
-            }%, frames = ${progress.frames}, speed = ${
-              progress.currentKbps
-            }kbps - ${progress.currentFps}fps, target = ${
-              progress.targetSize
-            }, timestamp = ${progress.timemark}`
-          );
+          // console.log(
+          //   `Video process progress => ${
+          //     progress.percent?.toFixed(2) || 0
+          //   }%, frames = ${progress.frames}, speed = ${
+          //     progress.currentKbps
+          //   }kbps - ${progress.currentFps}fps, target = ${
+          //     progress.targetSize
+          //   }, timestamp = ${progress.timemark}`
+          // );
         })
         .on("end", () => {
           console.log("✅ Done generating video chunks!");
