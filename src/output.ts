@@ -5,6 +5,10 @@ import Ffmpeg, {
 } from "fluent-ffmpeg";
 // utils
 import { getFittedResolution, calculateAllBitrates } from "./utils/bitrate.js";
+import { getValidPreset } from "./utils/presets.js";
+import { getValidAccelerator } from "./utils/accelerator.js";
+import { getValidAudioCodec, getValidVideoCodec } from "./utils/codecs.js";
+import { Device } from "../types/config-types.js";
 // data
 // @ts-ignore
 import { config } from "../config.example.js";
@@ -12,10 +16,7 @@ const fileMetaData = await import("../metadata.json", {
   assert: { type: "json" },
 });
 import { FfMetaData, FfOptions } from "./types/ffmpeg.js";
-import { getValidPreset } from "./utils/presets.js";
-import { getValidAccelerator } from "./utils/accelerator.js";
-import { Device } from "../types/config-types.js";
-import { getValidAudioCodec, getValidVideoCodec } from "./utils/codecs.js";
+import path from "path";
 // @ts-ignore
 const metadata: FfMetaData = fileMetaData.default;
 
@@ -62,7 +63,16 @@ const generateOutput = () => {
     )[0];
     console.log("Found", video.resolution, video.bitrates);
 
+    const outputFolder =
+      (config.outputAbsolute
+        ? config.input
+        : path.join(import.meta.dirname, config.input || "out")) || "";
+
     const options: FfOptions<Device> = {
+      i:
+        (config.inputAbsolute
+          ? config.input
+          : path.join(import.meta.dirname, config.input || "")) || "",
       // decoder settings
       hwaccel: getValidAccelerator(
         config.decodingDevice || "none",
