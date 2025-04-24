@@ -40,7 +40,7 @@ export const intelPresets: IntelPresets[] = [
   "veryslow",
 ] as const;
 
-const devices: Device[] = ["amd", "intel", "nvidia", "none"] as const;
+export const devices: Device[] = ["amd", "intel", "nvidia", "none"] as const;
 
 export const getValidPreset = <T extends Device = "none">(
   device = "none" as T,
@@ -48,7 +48,8 @@ export const getValidPreset = <T extends Device = "none">(
 ) => {
   try {
     // @ts-ignore
-    device = device.trim().toLowerCase();
+    device =
+      (typeof device === "string" && device.trim().toLowerCase()) || null;
     // @ts-ignore
     preset =
       typeof preset === "number"
@@ -57,9 +58,9 @@ export const getValidPreset = <T extends Device = "none">(
         ? (preset || "").toLowerCase().trim()
         : null;
     if (
-      typeof device !== "string" ||
-      !device.trim() ||
-      !devices.includes(device)
+      !device ||
+      // @ts-ignore
+      !devices.includes(device.trim().toLowerCase())
     ) {
       throw new Error(
         `Invalid device, required one of [${devices.join(
@@ -68,6 +69,8 @@ export const getValidPreset = <T extends Device = "none">(
         { cause: "invalid-device-type" }
       );
     }
+    // @ts-ignore
+    device = device.trim().toLowerCase();
     if (device === "nvidia") {
       // @ts-ignore
       const valid: NvidiaPresets =

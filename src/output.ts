@@ -13,6 +13,7 @@ const fileMetaData = await import("../metadata.json", {
 });
 import { FfMetaData, FfOptions } from "./types/ffmpeg.js";
 import { getValidPreset } from "./utils/presets.js";
+import { getValidAccelerator } from "./utils/accelerator.js";
 // @ts-ignore
 const metadata: FfMetaData = fileMetaData.default;
 
@@ -61,13 +62,15 @@ const generateOutput = () => {
 
     const options: FfOptions<Exclude<typeof config.decodingDevice, undefined>> =
       {
-        // encoder settings
-        accelerator:
-          typeof config.accelerator === "string" && config.accelerator.trim(),
         // decoder settings
+        accelerator: getValidAccelerator(
+          config.decodingDevice || "none",
+          config.accelerator
+        ),
+        // encoder settings
         preset:
           (config.preset &&
-            getValidPreset(config.decodingDevice || "none", config.preset)) ||
+            getValidPreset(config.encodingDevice || "none", config.preset)) ||
           undefined,
         crf:
           (config.decodingDevice === "intel" &&

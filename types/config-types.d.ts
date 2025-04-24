@@ -4,6 +4,8 @@
  */
 export type Device = "nvidia" | "amd" | "intel" | "none";
 
+type Mutable<T> = T extends readonly (infer U) ? U : T;
+
 export type IntelPresets =
   | "veryfast"
   | "faster"
@@ -35,9 +37,13 @@ export type Presets<D extends Device = "none"> = D extends "nvidia"
   ? AMDPresets
   : IntelPresets;
 
-export type NvidiaAccelerator = "cuda" | "cuvid" | "nvdec";
-export type AMDAccelerator = "d3d11va" | "dxva2";
-export type IntelAccelerator = "qsv" | "d3d11va" | "vaapi";
+export const nvidiaAccelerators = ["cuda", "cuvid", "nvdec"] as const;
+export const amdAccelerators = ["d3d11va", "dxva2"] as const;
+export const intelAccelerators = ["qsv", "d3d11va", "vaapi"] as const;
+
+export type NvidiaAccelerator = (typeof nvidiaAccelerators)[number];
+export type AMDAccelerator = (typeof amdAccelerators)[number];
+export type IntelAccelerator = (typeof intelAccelerators)[number];
 export type Accelerator<D extends Device = "none"> = D extends "nvidia"
   ? NvidiaAccelerator
   : D extends "amd"
