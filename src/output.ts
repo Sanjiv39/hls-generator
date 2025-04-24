@@ -3,12 +3,14 @@ import Ffmpeg, {
   FfmpegCommandOptions,
   FfprobeStream,
 } from "fluent-ffmpeg";
+import path from "path";
+import { writeFileSync } from "fs";
 // utils
 import { getFittedResolution, calculateAllBitrates } from "./utils/bitrate.js";
 import { getValidPreset } from "./utils/presets.js";
 import { getValidAccelerator } from "./utils/accelerator.js";
 import { getValidAudioCodec, getValidVideoCodec } from "./utils/codecs.js";
-import { Device, Config } from "./types/config-types.js";
+import { convertBitsToUnit } from "./utils/bits.js";
 // data
 // @ts-ignore
 import { config } from "../config.js";
@@ -16,8 +18,7 @@ const fileMetaData = await import("../metadata.json", {
   assert: { type: "json" },
 });
 import { FfMetaData, FfOptions } from "./types/ffmpeg.js";
-import path from "path";
-import { writeFileSync } from "fs";
+import { Device, Config } from "./types/config-types.js";
 // @ts-ignore
 const metadata: FfMetaData = fileMetaData.default;
 
@@ -27,14 +28,16 @@ const inputFile =
   (config.inputAbsolute
     ? config.input
     : path.join(import.meta.dirname, config.input || "")) || "";
-const outputFolder = path.join(
-  config.outputAbsolute ? "" : "out",
-  config.outputDir ||
-    (config.outputAbsolute
-      ? config.outputDir
-      : path.join(import.meta.dirname, config.outputDir || "out")) ||
-    ""
-);
+const outputFolder = path
+  .join(
+    config.outputAbsolute ? "" : "out",
+    config.outputDir ||
+      (config.outputAbsolute
+        ? config.outputDir
+        : path.join(import.meta.dirname, config.outputDir || "out")) ||
+      ""
+  )
+  .replace("\\", "/");
 const ffmpegInput = Ffmpeg(inputFile);
 
 const generateOutput = async () => {
@@ -138,57 +141,59 @@ const generateOutput = async () => {
       10;
 
     // Video process
+    const outputOptions = Object.entries(options)
+      .filter((dt) => dt[1] && dt[0])
+      .map((dt) => `-${dt[0]} ${String(dt[1]).trim()}`)
+      .concat([
+        // mappings
+        ...resolutions.map((dt) => `-map 0:${video.index}`),
+        // codecs
+        ...resolutions.map(
+          (dt, i) =>
+            `-c:v:${i} ${
+              userVMappings[i]?.codec?.trim().toLowerCase() || vCodec
+            }`
+        ),
+        "-f hls",
+        `-hls_time ${hlsTime}`,
+        `-hls_playlist_type vod`,
+        // mapping definitions
+        "-var_stream_map",
+        `${resolutions
+          .map(
+            (dt, i) =>
+              `v:${i},name:${userVMappings[i]?.name?.trim() || `${dt.height}p`}`
+          )
+          .join(" ")}`,
+        `-master_pl_name ${
+          config.hlsMasterFile?.trim()?.match(/(.| )+[.]m3u8/)?.[0] ||
+          "master.m3u8"
+        }`,
+        // resolutions
+        ...resolutions.map(
+          (dt, i) =>
+            `-s:v:${i} ${
+              userVMappings[i]?.res?.trim().toLowerCase() ||
+              `${dt.width}x${dt.height}`
+            }`
+        ),
+        // bitrates
+        ...resolutions.map(
+          (dt, i) =>
+            `-b:v:${i} ${Math.round(
+              convertBitsToUnit(
+                (userVMappings[i]?.bitrate || dt.bitrates) as number,
+                "k"
+              )?.metric || 0
+            )}k`
+        ),
+        `-hls_segment_filename ${outputFolder}/video/%v/${
+          config.videoSegment || config.segment || "segment%d.ts"
+        }`,
+      ]);
     const videoPr = await new Promise<boolean>((res, rej) => {
       ffmpegInput
-        .outputOptions(
-          Object.entries(options)
-            .filter((dt) => dt[1] && dt[0])
-            .map((dt) => `-${dt[0]} ${String(dt[1]).trim()}`)
-            .concat([
-              // mappings
-              ...resolutions.map((dt) => `-map 0:${video.index}`),
-              // codecs
-              ...resolutions.map(
-                (dt, i) =>
-                  `-c:v:${i} ${
-                    userVMappings[i]?.codec?.trim().toLowerCase() || vCodec
-                  }`
-              ),
-              "-f hls",
-              `-hls_time ${hlsTime}`,
-              `-hls_playlist_type vod`,
-              // mapping definitions
-              "-var_stream_map",
-              `"${resolutions
-                .map(
-                  (dt, i) =>
-                    `v:${i},name:${
-                      userVMappings[i]?.name?.trim() || `${dt.height}p`
-                    }`
-                )
-                .join(" ")}"`,
-              `-master_pl_name "${
-                config.hlsMasterFile?.trim()?.match(/(.| )+[.]m3u8/)?.[0] ||
-                "master.m3u8"
-              }"`,
-              // resolutions
-              ...resolutions.map(
-                (dt, i) =>
-                  `-s:v:${i} ${
-                    userVMappings[i]?.res?.trim().toLowerCase() ||
-                    `${dt.width}x${dt.height}`
-                  }`
-              ),
-              // bitrates
-              ...resolutions.map(
-                (dt, i) =>
-                  `-b:v:${i} ${userVMappings[i]?.bitrate || dt.bitrates}`
-              ),
-              `-hls_segment_filename ${outputFolder}/video/%v/${
-                config.videoSegment || config.segment || "segment%d.ts"
-              }`,
-            ])
-        )
+        .outputOptions(outputOptions)
         .output(
           `${outputFolder}/video/%v/${
             config.videoSingleM3u8?.trim()?.match(/(.| )+[.]m3u8/)?.[0] ||
@@ -201,15 +206,15 @@ const generateOutput = async () => {
           writeFileSync("./command.sh", commandLine);
         })
         .on("progress", (progress) => {
-          // console.log(
-          //   `Video process progress => ${
-          //     progress.percent?.toFixed(2) || 0
-          //   }%, frames = ${progress.frames}, speed = ${
-          //     progress.currentKbps
-          //   }kbps - ${progress.currentFps}fps, target = ${
-          //     progress.targetSize
-          //   }, timestamp = ${progress.timemark}`
-          // );
+          console.log(
+            `Video process progress => ${
+              progress.percent?.toFixed(2) || 0
+            }%, frames = ${progress.frames}, speed = ${
+              progress.currentKbps || 0
+            }kbps - ${progress.currentFps || 0}fps, target = ${
+              progress.targetSize
+            }, timestamp = ${progress.timemark}`
+          );
         })
         .on("end", () => {
           console.log("✅ Done generating video chunks!");
