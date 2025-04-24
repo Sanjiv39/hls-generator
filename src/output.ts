@@ -27,12 +27,14 @@ const inputFile =
   (config.inputAbsolute
     ? config.input
     : path.join(import.meta.dirname, config.input || "")) || "";
-const outputFolder =
+const outputFolder = path.join(
+  config.outputAbsolute ? "" : "out",
   config.outputDir ||
-  (config.outputAbsolute
-    ? config.outputDir
-    : path.join(import.meta.dirname, config.outputDir || "out")) ||
-  "";
+    (config.outputAbsolute
+      ? config.outputDir
+      : path.join(import.meta.dirname, config.outputDir || "out")) ||
+    ""
+);
 const ffmpegInput = Ffmpeg(inputFile);
 
 const generateOutput = async () => {
