@@ -16,7 +16,6 @@ export const config = {
   audioSegment: "",
   videoSingleM3u8: "",
   audioSingleM3u8: "",
-  varianceFolderName: "",
   videoMappings: null,
   audioMappings: null,
 };

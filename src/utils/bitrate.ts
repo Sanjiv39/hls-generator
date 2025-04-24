@@ -33,7 +33,12 @@ export function calculateAllBitrates(
       throw new Error("Didn't got any fitting resolution");
     }
 
-    const bitrates: Partial<Record<keyof typeof resolutionPixels, number>> = {};
+    const bitrates: Partial<
+      Record<
+        keyof typeof resolutionPixels,
+        Exclude<typeof resolution, null> & { bitrates: number }
+      >
+    > = {};
     const pixels = resolutionPixels[resolution.key];
     if (Number.isNaN(String(bitrate)) || !bitrate || bitrate <= 0) {
       bitrate = Math.max(
@@ -60,8 +65,12 @@ export function calculateAllBitrates(
       }
       //@ts-ignore
       const ratio = resolutionPixels[res] / pixels;
-      //@ts-ignore
-      bitrates[res] = Math.round(bitrate * ratio);
+      bitrates[res as keyof typeof resolutions] = {
+        bitrates: Math.round(bitrate * ratio),
+        key: res as keyof typeof resolutions,
+        height: resolutions[res as keyof typeof resolutions].height,
+        width: resolutions[res as keyof typeof resolutions].width,
+      };
       //@ts-ignore
       if (!bitrates[res]) {
         // @ts-ignore

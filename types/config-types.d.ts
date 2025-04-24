@@ -60,6 +60,8 @@ export const intelCodecs = ["h264_qsv", "hevc_qsv", "av1_qsv"] as const;
 export type NvidiaCodec = (typeof nvidiaCodecs)[number];
 export type AMDCodec = (typeof amdCodecs)[number];
 export type IntelCodec = (typeof intelCodecs)[number];
+
+/** @description Encoder Video codec based on encoder-device */
 export type VideoCodec<D extends Device = "none"> =
   | (D extends "nvidia"
       ? NvidiaCodec
@@ -72,19 +74,43 @@ export type VideoCodec<D extends Device = "none"> =
   | "libx265";
 
 export const audioCodecs = ["aac", "mp3", "ac3", "eac3"] as const;
+/** @description Encoder Audio codec */
 export type AudioCodec = (typeof audioCodecs)[number];
 
 // Mappings
 
-export type VideoMapping = {
+export type VideoMapping<D extends Device> = {
   name: string;
-  bitrate: string | number;
-  res: string;
+  /**
+   * @description Video bitrate. By default calculated bitrate on the indexed mapping
+   * @example 3000000
+   * @example "3000k"
+   */
+  bitrate?: string | number;
+  /**
+   * @description Video resolution. By default passed by indexed mapping
+   * @example "1280x720"
+   */
+  res?: string;
+  /**
+   * @description The video codec that will be used for stream
+   */
+  codec?: VideoCodec<D>;
 };
 export type AudioMapping = {
   name: string;
-  bitrate: string | number;
-  channels: 1 | 2;
+  /**
+   * @description Audio bitrate. By default calculated bitrate on the indexed mapping
+   * @example 128000
+   * @example "128k"
+   */
+  bitrate?: string | number;
+  /**
+   * @description No of audio channels. 1 for `mono` and 2 for `stereo`
+   * @default 1
+   */
+  channels?: 1 | 2;
+  codec?: AudioCodec;
 };
 
 export type Config<D extends Device = "none"> = {
@@ -143,6 +169,27 @@ export type Config<D extends Device = "none"> = {
    */
   threads: (D extends "intel" | "amd" ? number : undefined) | undefined;
   /**
+   * @description Do chunk video or not if present any
+   * @default true
+   */
+  chunkVideo: boolean;
+  /**
+   * @description Do chunk audio or not if present any
+   * @default true
+   */
+  chunkAudio: boolean;
+  /**
+   * @description Which video index you want to get chunked starting from 1 out of available. Defaults to first highest resolution found with most bitrate.
+   * @example 1
+   */
+  chunkVideoIndex: number;
+  /**
+   * @description What audio indexes you want to get chunked starting from 1 out of available. Defaults to all audios. Mapping indexes will update by this from 0 till length of passed indexes.
+   * @example [1, 2]
+   * @example 2
+   */
+  chunkAudioIndexes: number | number[];
+  /**
    * @description Codec will be used for video chunking
    * @default "libx264"
    */
@@ -182,17 +229,12 @@ export type Config<D extends Device = "none"> = {
    * @default "index.m3u8"
    */
   audioSingleM3u8: string;
-  /**
-   * @description Variance folder for named variants. (%v refers to variant naem)
-   * @default "%v"
-   */
-  varianceFolderName: string;
 
   /**
    *  @description Custom video output mappings respective to their resolutions fetched from metadata. Array or null. By default gives mappings of highest resolution till 360p
    * @example [{res: "1280x720p", bitrate: "1200k", name: "HD"}]
    */
-  videoMappings: VideoMapping[] | null | undefined;
+  videoMappings: VideoMapping<D>[] | null | undefined;
 
   /**
    *  @description Custom audio output mappings respective to their indexes fetched from metadata. Array or null. By default gives mappings with indiced names and metadata based settings
