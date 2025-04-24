@@ -14,6 +14,8 @@ const fileMetaData = await import("../metadata.json", {
 import { FfMetaData, FfOptions } from "./types/ffmpeg.js";
 import { getValidPreset } from "./utils/presets.js";
 import { getValidAccelerator } from "./utils/accelerator.js";
+import { Device } from "../types/config-types.js";
+import { getValidAudioCodec, getValidVideoCodec } from "./utils/codecs.js";
 // @ts-ignore
 const metadata: FfMetaData = fileMetaData.default;
 
@@ -60,36 +62,38 @@ const generateOutput = () => {
     )[0];
     console.log("Found", video.resolution, video.bitrates);
 
-    const options: FfOptions<Exclude<typeof config.decodingDevice, undefined>> =
-      {
-        // decoder settings
-        accelerator: getValidAccelerator(
-          config.decodingDevice || "none",
-          config.accelerator
-        ),
-        // encoder settings
-        preset:
-          (config.preset &&
-            getValidPreset(config.encodingDevice || "none", config.preset)) ||
-          undefined,
-        crf:
-          (config.decodingDevice === "intel" &&
-            typeof config.crf === "number" &&
-            !Number.isNaN(config.crf) &&
-            Number.isFinite(config.crf) &&
-            config.crf > 0 &&
-            config.crf) ||
-          undefined,
-        threads:
-          ((config.decodingDevice === "intel" ||
-            config.decodingDevice === "amd") &&
-            typeof config.threads === "number" &&
-            !Number.isNaN(config.threads) &&
-            Number.isFinite(config.threads) &&
-            config.threads > 0 &&
-            config.threads) ||
-          undefined,
-      };
+    const options: FfOptions<Device> = {
+      // decoder settings
+      hwaccel: getValidAccelerator(
+        config.decodingDevice || "none",
+        config.accelerator
+      ),
+      // encoder settings
+      preset:
+        (config.preset &&
+          getValidPreset(config.encodingDevice || "none", config.preset)) ||
+        undefined,
+      crf:
+        (config.decodingDevice === "intel" &&
+          typeof config.crf === "number" &&
+          !Number.isNaN(config.crf) &&
+          Number.isFinite(config.crf) &&
+          config.crf > 0 &&
+          config.crf) ||
+        undefined,
+      threads:
+        ((config.decodingDevice === "intel" ||
+          config.decodingDevice === "amd") &&
+          typeof config.threads === "number" &&
+          !Number.isNaN(config.threads) &&
+          Number.isFinite(config.threads) &&
+          config.threads > 0 &&
+          config.threads) ||
+        undefined,
+      // codecs
+      "c:v": getValidVideoCodec(config.encodingDevice, config.videoCodec),
+      "c:a": getValidAudioCodec(config.audioCodec),
+    };
   } catch (err) {
     console.log(err);
   }

@@ -43,6 +43,7 @@ export const getValidAccelerator = <D extends Device>(
           (intelAccelerators as string[]).includes(accelerator))) &&
         (accelerator as Accelerator<Device>)) ||
       undefined;
+    return valid;
   } catch (err) {
     console.error("Error getting accelerator :", err);
     return undefined;

@@ -6,6 +6,7 @@ export type Device = "nvidia" | "amd" | "intel" | "none";
 
 type Mutable<T> = T extends readonly (infer U) ? U : T;
 
+// Presets
 export type IntelPresets =
   | "veryfast"
   | "faster"
@@ -37,6 +38,7 @@ export type Presets<D extends Device = "none"> = D extends "nvidia"
   ? AMDPresets
   : IntelPresets;
 
+// Accelerators
 export const nvidiaAccelerators = ["cuda", "cuvid", "nvdec"] as const;
 export const amdAccelerators = ["d3d11va", "dxva2"] as const;
 export const intelAccelerators = ["qsv", "d3d11va", "vaapi"] as const;
@@ -49,6 +51,30 @@ export type Accelerator<D extends Device = "none"> = D extends "nvidia"
   : D extends "amd"
   ? AMDAccelerator
   : IntelAccelerator;
+
+// Codecs
+export const nvidiaCodecs = ["h264_nvenc", "hevc_nvenc", "av1_nvenc"] as const;
+export const amdCodecs = ["h264_amf", "hevc_amf", "av1_amf"] as const;
+export const intelCodecs = ["h264_qsv", "hevc_qsv", "av1_qsv"] as const;
+
+export type NvidiaCodec = (typeof nvidiaCodecs)[number];
+export type AMDCodec = (typeof amdCodecs)[number];
+export type IntelCodec = (typeof intelCodecs)[number];
+export type VideoCodec<D extends Device = "none"> =
+  | (D extends "nvidia"
+      ? NvidiaCodec
+      : D extends "amd"
+      ? AMDCodec
+      : D extends "intel"
+      ? IntelAccelerator
+      : never)
+  | "libx264"
+  | "libx265";
+
+export const audioCodecs = ["aac", "mp3", "ac3", "eac3"] as const;
+export type AudioCodec = (typeof audioCodecs)[number];
+
+// Mappings
 
 export type VideoMapping = {
   name: string;
@@ -116,6 +142,16 @@ export type Config<D extends Device = "none"> = {
    * @default undefined
    */
   threads: (D extends "intel" | "amd" ? number : undefined) | undefined;
+  /**
+   * @description Codec will be used for video chunking
+   * @default "libx264"
+   */
+  videoCodec: VideoCodec<D>;
+  /**
+   * @description Codec will be used for audio chunking
+   * @default "aac"
+   */
+  audioCodec: AudioCodec;
   /**
    * @description The file that will contain audio, video and subs
    * @default "master.m3u8"

@@ -25,4 +25,10 @@ export type FfMetaData = {
   subtitles: (FfProbeStreamTagged & { codec_type: "subtitle" })[];
 }>;
 
-export type FfOptions<D extends Device = "none"> = Partial<Config<D>> & {};
+export type FfOptions<D extends Device = "none"> = Partial<
+  Config<D> & {
+    hwaccel: Config<D>["accelerator"];
+    "c:v": Config<D>["videoCodec"];
+    "c:a": Config<D>["audioCodec"];
+  }
+>;
