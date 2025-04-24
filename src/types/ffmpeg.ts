@@ -1,5 +1,5 @@
 import { FfprobeStream, FfprobeData } from "fluent-ffmpeg";
-import { Config, Device, Presets } from "../../types/config-types.js";
+import { Config, Device, Presets } from "../types/config-types.js";
 
 export type FfmpegTags = Partial<{
   language: string;

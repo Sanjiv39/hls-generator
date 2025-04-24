@@ -4,6 +4,7 @@ import path from "path";
 // data
 // @ts-ignore
 import { config } from "../config.js";
+import { calculateAllBitrates, getFittedResolution } from "./utils/bitrate.js";
 // types
 import { FfMetaData } from "./types/ffmpeg.js";
 
@@ -18,7 +19,17 @@ ffmpeg.ffprobe(inputFile, (err, data: FfMetaData) => {
   }
   try {
     // @ts-ignore
-    data.videos = data.streams.filter((dt) => dt.codec_type === "video");
+    data.videos = data.streams
+      .filter((dt) => dt.codec_type === "video")
+      .map((dt) => ({
+        ...dt,
+        adaptedResolution: getFittedResolution(Number(String(dt.height))),
+        resolutions: calculateAllBitrates(
+          Number(String(dt.height)),
+          Number(String(dt.bit_rate)) || Number(String(dt.tags?.BPS)) || 0
+        ),
+      }))
+      .filter((dt) => dt.adaptedResolution?.height);
     // @ts-ignore
     data.audios = data.streams.filter((dt) => dt.codec_type === "audio");
     // @ts-ignore

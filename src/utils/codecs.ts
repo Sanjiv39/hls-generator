@@ -10,7 +10,7 @@ import {
   NvidiaCodec,
   nvidiaCodecs,
   VideoCodec,
-} from "../../types/config-types.js";
+} from "../types/config-types.js";
 import { devices } from "./presets.js";
 
 export const getValidVideoCodec = <D extends Device>(

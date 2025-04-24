@@ -8,15 +8,16 @@ import { getFittedResolution, calculateAllBitrates } from "./utils/bitrate.js";
 import { getValidPreset } from "./utils/presets.js";
 import { getValidAccelerator } from "./utils/accelerator.js";
 import { getValidAudioCodec, getValidVideoCodec } from "./utils/codecs.js";
-import { Device, Config } from "../types/config-types.js";
+import { Device, Config } from "./types/config-types.js";
 // data
 // @ts-ignore
-import { config } from "../config.example.js";
+import { config } from "../config.js";
 const fileMetaData = await import("../metadata.json", {
   assert: { type: "json" },
 });
 import { FfMetaData, FfOptions } from "./types/ffmpeg.js";
 import path from "path";
+import { writeFileSync } from "fs";
 // @ts-ignore
 const metadata: FfMetaData = fileMetaData.default;
 
@@ -120,11 +121,10 @@ const generateOutput = async () => {
     const aCodec = getValidAudioCodec(config.audioCodec);
 
     // User video mappings
-    const userVMappings: Config<Device>["videoMappings"] = Array.isArray(
-      config.videoMappings
-    )
-      ? config.videoMappings
-      : [];
+    const userVMappings: Exclude<
+      Config<Device>["videoMappings"],
+      null | undefined | false
+    > = Array.isArray(config.videoMappings) ? config.videoMappings : [];
 
     const hlsTime =
       (typeof config.hlsChunkTime === "number" &&
@@ -154,7 +154,8 @@ const generateOutput = async () => {
               `-hls_time ${hlsTime}`,
               `-hls_playlist_type vod`,
               // mapping definitions
-              `-var_stream_map ${resolutions
+              "-var_stream_map",
+              `${resolutions
                 .map(
                   (dt, i) =>
                     `v:${i},name:${
@@ -193,10 +194,17 @@ const generateOutput = async () => {
         .on("start", (commandLine) => {
           console.log("Video processing started...............");
           console.log("FFmpeg command:", commandLine);
+          writeFileSync("./command.sh", commandLine);
         })
         .on("progress", (progress) => {
           console.log(
-            `Video process progress: ${progress.percent?.toFixed(2)}%`
+            `Video process progress => ${
+              progress.percent?.toFixed(2) || 0
+            }%, frames = ${progress.frames}, speed = ${
+              progress.currentKbps
+            }kbps - ${progress.currentFps}fps, target = ${
+              progress.targetSize
+            }, timestamp = ${progress.timemark}`
           );
         })
         .on("end", () => {
