@@ -155,14 +155,14 @@ const generateOutput = async () => {
               `-hls_playlist_type vod`,
               // mapping definitions
               "-var_stream_map",
-              `${resolutions
+              `"${resolutions
                 .map(
                   (dt, i) =>
                     `v:${i},name:${
                       userVMappings[i]?.name?.trim() || `${dt.height}p`
                     }`
                 )
-                .join(" ")}`,
+                .join(" ")}"`,
               `-master_pl_name "${
                 config.hlsMasterFile?.trim()?.match(/(.| )+[.]m3u8/)?.[0] ||
                 "master.m3u8"
