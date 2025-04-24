@@ -35,6 +35,15 @@ export type Presets<D extends Device = "none"> = D extends "nvidia"
   ? AMDPresets
   : IntelPresets;
 
+export type NvidiaAccelerator = "cuda" | "cuvid" | "nvdec";
+export type AMDAccelerator = "d3d11va" | "dxva2";
+export type IntelAccelerator = "qsv" | "d3d11va" | "vaapi";
+export type Accelerator<D extends Device = "none"> = D extends "nvidia"
+  ? NvidiaAccelerator
+  : D extends "amd"
+  ? AMDAccelerator
+  : IntelAccelerator;
+
 export type VideoMapping = {
   name: string;
   bitrate: string | number;
@@ -73,6 +82,7 @@ export type Config<D extends Device = "none"> = {
   hlsChunkTime: number;
   /**
    * @description Processor or graphics card for encoding usage
+   * @default "none"
    */
   encodingDevice: Device;
   /**
@@ -81,20 +91,25 @@ export type Config<D extends Device = "none"> = {
    */
   decodingDevice: Device;
   /**
-   * @description Video encoding preset type like fast or good quality
-   * @default "fast"
+   * @description Video decoding accelerator depending on `decodingDevice`
+   * @default undefined
    */
-  preset: Presets<D>;
+  accelerator: Accelerator<D> | undefined;
+  /**
+   * @description Video encoding preset type depending on quality and speed
+   * @default undefined
+   */
+  preset: Presets<D> | undefined;
   /**
    * @description CRF speed of device decoding only if it is intel. Otherwise ignores
    * @default undefined
    */
-  crf: number | undefined;
+  crf: (D extends "intel" ? number : undefined) | undefined;
   /**
    * @description Number of threads of CPU to be used. Don't pass if GPU
    * @default undefined
    */
-  threads: number | undefined;
+  threads: (D extends "intel" | "amd" ? number : undefined) | undefined;
   /**
    * @description The file that will contain audio, video and subs
    * @default "master.m3u8"

@@ -61,8 +61,13 @@ const generateOutput = () => {
 
     const options: FfOptions<Exclude<typeof config.decodingDevice, undefined>> =
       {
+        // encoder settings
+        accelerator:
+          typeof config.accelerator === "string" && config.accelerator.trim(),
+        // decoder settings
         preset:
-          getValidPreset(config.decodingDevice || "none", config.preset) ||
+          (config.preset &&
+            getValidPreset(config.decodingDevice || "none", config.preset)) ||
           undefined,
         crf:
           (config.decodingDevice === "intel" &&

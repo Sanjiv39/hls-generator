@@ -1,5 +1,5 @@
 import { FfprobeStream, FfprobeData } from "fluent-ffmpeg";
-import { Device, Presets } from "../../types/config-types.js";
+import { Config, Device, Presets } from "../../types/config-types.js";
 
 export type FfmpegTags = Partial<{
   language: string;
@@ -25,8 +25,4 @@ export type FfMetaData = {
   subtitles: (FfProbeStreamTagged & { codec_type: "subtitle" })[];
 }>;
 
-export type FfOptions<D extends Device = "none"> = {
-  preset: Presets<D> | undefined;
-  crf?: D extends "intel" ? number | undefined : undefined;
-  threads?: D extends "intel" | "amd" ? number | undefined : undefined;
-};
+export type FfOptions<D extends Device = "none"> = Partial<Config<D>> & {};
