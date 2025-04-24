@@ -13,6 +13,7 @@ export type IntelPresets =
   | "slower"
   | "veryslow"
   | number;
+
 export type NvidiaPresets =
   | `p${1 | 2 | 3 | 4 | 5 | 6 | 7}`
   | "slow"
@@ -86,9 +87,14 @@ export type Config<D extends Device = "none"> = {
   preset: Presets<D>;
   /**
    * @description CRF speed of device decoding only if it is intel. Otherwise ignores
-   * @default 30
+   * @default undefined
    */
-  crf: number;
+  crf: number | undefined;
+  /**
+   * @description Number of threads of CPU to be used. Don't pass if GPU
+   * @default undefined
+   */
+  threads: number | undefined;
   /**
    * @description The file that will contain audio, video and subs
    * @default "master.m3u8"

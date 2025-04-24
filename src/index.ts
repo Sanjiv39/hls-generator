@@ -8,8 +8,8 @@ import { config } from "../config.js";
 import { FfMetaData } from "./types/ffmpeg.js";
 
 const inputFile = config.inputAbsolute
-  ? config.input
-  : path.join(import.meta.dirname, config.input);
+  ? config.input || ""
+  : path.join(import.meta.dirname, config.input || "");
 
 ffmpeg.ffprobe(inputFile, (err, data: FfMetaData) => {
   if (err) {

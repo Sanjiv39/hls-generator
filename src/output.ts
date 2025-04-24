@@ -12,6 +12,7 @@ const fileMetaData = await import("../metadata.json", {
   assert: { type: "json" },
 });
 import { FfMetaData, FfOptions } from "./types/ffmpeg.js";
+import { getValidPreset } from "./utils/presets.js";
 // @ts-ignore
 const metadata: FfMetaData = fileMetaData.default;
 
@@ -57,18 +58,30 @@ const generateOutput = () => {
         a.resolution.height * (a.bitrates[a.resolution.key] || 0)
     )[0];
     console.log("Found", video.resolution, video.bitrates);
-    const options: FfOptions<typeof config.decodingDevice> = {
-      preset:
-        String(config.preset).trim() ||
-        (config.decodingDevice === "nvidia"
-          ? "p5"
-          : config.decodingDevice === "amd"
-          ? "balanced"
-          : "fast"),
-      crf: (config.decodingDevice.toLowerCase() === "intel" && config.crf
-        ? config.crf
-        : undefined) as FfOptions["crf"],
-    };
+
+    const options: FfOptions<Exclude<typeof config.decodingDevice, undefined>> =
+      {
+        preset:
+          getValidPreset(config.decodingDevice || "none", config.preset) ||
+          undefined,
+        crf:
+          (config.decodingDevice === "intel" &&
+            typeof config.crf === "number" &&
+            !Number.isNaN(config.crf) &&
+            Number.isFinite(config.crf) &&
+            config.crf > 0 &&
+            config.crf) ||
+          undefined,
+        threads:
+          ((config.decodingDevice === "intel" ||
+            config.decodingDevice === "amd") &&
+            typeof config.threads === "number" &&
+            !Number.isNaN(config.threads) &&
+            Number.isFinite(config.threads) &&
+            config.threads > 0 &&
+            config.threads) ||
+          undefined,
+      };
   } catch (err) {
     console.log(err);
   }
