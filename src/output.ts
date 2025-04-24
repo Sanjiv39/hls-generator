@@ -91,8 +91,8 @@ const generateOutput = () => {
           config.threads) ||
         undefined,
       // codecs
-      "c:v": getValidVideoCodec(config.encodingDevice, config.videoCodec),
-      "c:a": getValidAudioCodec(config.audioCodec),
+      c_v: getValidVideoCodec(config.encodingDevice, config.videoCodec),
+      c_a: getValidAudioCodec(config.audioCodec),
     };
   } catch (err) {
     console.log(err);

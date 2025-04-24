@@ -28,7 +28,7 @@ export type FfMetaData = {
 export type FfOptions<D extends Device = "none"> = Partial<
   Config<D> & {
     hwaccel: Config<D>["accelerator"];
-    "c:v": Config<D>["videoCodec"];
-    "c:a": Config<D>["audioCodec"];
+    c_v: Config<D>["videoCodec"];
+    c_a: Config<D>["audioCodec"];
   }
 >;
