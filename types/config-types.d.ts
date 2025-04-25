@@ -238,7 +238,11 @@ export type Config<D extends Device = "none"> = {
    * @default "index.m3u8"
    */
   audioSingleM3u8: string;
-
+  /**
+   * @description seconds to delay subtitle start by
+   * @default 0
+   */
+  delaySubsBy: number;
   /**
    *  @description Custom video output mappings respective to their resolutions fetched from metadata. Array or null. By default gives mappings of highest resolution till 360p
    * @example [{res: "1280x720p", bitrate: "1200k", name: "HD"}]

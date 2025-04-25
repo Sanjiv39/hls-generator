@@ -14,7 +14,7 @@
     "start": "node dist/index.js",
     "dev": "nodemon src/index.ts",
     "dev-test": "nodemon -- ",
-    "dev-input": "nodemon src/index.ts",
+    "dev-input": "nodemon src/input.ts",
     "dev-output": "nodemon src/output.ts",
     "get-metadata": "npm run build && node dist/index.js"
   },
