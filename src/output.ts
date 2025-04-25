@@ -85,10 +85,15 @@ const processVideo = async (
         ) || [];
     // console.log(videos.length);
 
+    if (!videos.length) {
+      throw new Error("No valid videos");
+    }
+
     const video =
       (typeof config.chunkVideoIndex === "number" &&
         !Number.isNaN(config.chunkVideoIndex) &&
-        videos[config.chunkVideoIndex]) ||
+        Number.isFinite(config.chunkVideoIndex) &&
+        videos.find((dt) => dt.index === config.chunkVideoIndex)) ||
       videos.sort(
         (a, b) =>
           b.resolution.height * (b.bitrates[b.resolution.key]?.bitrates || 0) -
@@ -218,13 +223,30 @@ const processAudio = async (
   hlsTime: number
 ) => {
   try {
-    const audios = metadata.audios || [];
+    const userIndexes =
+      (config.chunkAudioIndexes &&
+        [
+          ...(Array.isArray(config.chunkAudioIndexes)
+            ? config.chunkAudioIndexes
+            : [config.chunkAudioIndexes]),
+        ].filter(
+          (ind) =>
+            typeof ind === "number" && Number.isNaN(ind) && Number.isFinite(ind)
+        )) ||
+      null;
+    const audios = (metadata.audios || []).filter((dt) =>
+      userIndexes?.length ? userIndexes.includes(dt.index) : true
+    );
 
     const aCodec = getValidAudioCodec(config.audioCodec);
     const userAMappings: Exclude<
       Config<Device>["audioMappings"],
       null | undefined | false
     > = Array.isArray(config.audioMappings) ? config.audioMappings : [];
+
+    if (!audios.length) {
+      throw new Error("No valid audios");
+    }
 
     const outputOptions = Object.entries(options)
       .filter((dt) => dt[1] && dt[0])

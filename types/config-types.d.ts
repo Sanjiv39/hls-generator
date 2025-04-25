@@ -189,12 +189,12 @@ export type Config<D extends Device = "none"> = {
   chunkAudio: boolean;
 
   /**
-   * @description Which video index you want to get chunked starting from 1 out of available. Defaults to first highest resolution found with most bitrate.
+   * @description Which video index you want to get chunked from `metadata.json`. Defaults to first highest resolution found with most bitrate.
    * @example 1
    */
   chunkVideoIndex: number;
   /**
-   * @description What audio indexes you want to get chunked starting from 1 out of available. Defaults to all audios. Mapping indexes will update by this from 0 till length of passed indexes.
+   * @description What audio indexes you want to get chunked from `metadata.json`. Defaults to all audios.
    * @example [1, 2]
    * @example 2
    */
