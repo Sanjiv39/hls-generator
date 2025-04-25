@@ -5,6 +5,7 @@ import Ffmpeg, {
 } from "fluent-ffmpeg";
 import path from "path";
 import { writeFileSync } from "fs";
+import { v7 } from "uuid";
 // utils
 import { getFittedResolution, calculateAllBitrates } from "./utils/bitrate.js";
 import { getValidPreset } from "./utils/presets.js";
@@ -24,6 +25,7 @@ const metadata: FfMetaData = fileMetaData.default;
 
 // console.log(metadata);
 
+const uuid = v7();
 const inputFile =
   (config.inputAbsolute
     ? config.input
@@ -33,8 +35,11 @@ const outputFolder = path
     config.outputAbsolute ? "" : "out",
     config.outputDir ||
       (config.outputAbsolute
-        ? config.outputDir
-        : path.join(import.meta.dirname, config.outputDir || "out")) ||
+        ? config.outputDir || config.input || `hls-${uuid}`
+        : path.join(
+            import.meta.dirname,
+            config.outputDir || config.input || `hls-${uuid}`
+          )) ||
       ""
   )
   .replace("\\", "/");
@@ -94,12 +99,17 @@ const generateOutput = async () => {
       )
       .map((dt) => ({ ...(dt[1] as Required<(typeof dt)[1]>) }));
 
-    const options: FfOptions<Device> = {
+    // Config options input
+    const iOptions = {
       // decoder settings
       hwaccel: getValidAccelerator(
         config.decodingDevice || "none",
         config.accelerator
       ),
+    };
+
+    // Config options output
+    const oOptions: FfOptions<Device> = {
       // encoder settings
       preset:
         (config.preset &&
@@ -141,7 +151,7 @@ const generateOutput = async () => {
       10;
 
     // Video process
-    const outputOptions = Object.entries(options)
+    const outputOptions = Object.entries(oOptions)
       .filter((dt) => dt[1] && dt[0])
       .map((dt) => `-${dt[0]} ${String(dt[1]).trim()}`)
       .concat([
@@ -193,6 +203,11 @@ const generateOutput = async () => {
       ]);
     const videoPr = await new Promise<boolean>((res, rej) => {
       ffmpegInput
+        // .addInputOptions(
+        //   Object.entries(iOptions)
+        //     .filter((dt) => dt[1] && dt[0])
+        //     .map((dt) => `-${dt[0]} ${String(dt[1]).trim()}`)
+        // )
         .outputOptions(outputOptions)
         .output(
           `${outputFolder}/video/%v/${
