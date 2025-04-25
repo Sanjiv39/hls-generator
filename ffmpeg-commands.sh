@@ -44,4 +44,8 @@
 # ffmpeg -i "D:/Content/Captain.America.Brave.New.World.(2025).WEB-DL.1080p.x264.Hin.+.Eng-AAC.5.1.192Kbps.ESub.Vegamovies.is.mkv" -preset veryfast -crf 30 -threads 100 -map 0:3 -c:s webvtt -f segment -segment_time 10 -segment_list "test/subs/eng/index.m3u8" -segment_list_type m3u8 -segment_format webvtt "test/subs/eng/segment%d.vtt"
 
 # Use below command to generate a single vtt and create a master m3u8 of the vtt file with total duration in info to be added in hls
-# ffmpeg -i "D:/Content/Captain.America.Brave.New.World.(2025).WEB-DL.1080p.x264.Hin.+.Eng-AAC.5.1.192Kbps.ESub.Vegamovies.is.mkv" -preset veryfast -crf 30 -threads 100 -map 0:3 "test/subs/eng/segment.vtt" -c:s webvtt -f hls -hls_time 10 -hls_list_size 0 -segment_list "test/subs/eng/total.m3u8" 
+# ffmpeg -i "D:/Content/Captain.America.Brave.New.World.(2025).WEB-DL.1080p.x264.Hin.+.Eng-AAC.5.1.192Kbps.ESub.Vegamovies.is.mkv" -preset veryfast -crf 30 -threads 100 -map 0:3 -c:s webvtt "test/subs/eng.vtt"
+
+# Shifting delay in subs
+# ffmpeg -itsoffset 2 -i "D:/Content/Captain.America.Brave.New.World.(2025).WEB-DL.1080p.x264.Hin.+.Eng-AAC.5.1.192Kbps.ESub.Vegamovies.is.mkv" -map 0:3 -c:s webvtt "test/subs/eng.vtt"
+# ffmpeg -itsoffset 2 -i "test/subs/org.vtt" -c:s webvtt "test/subs/eng.vtt"
