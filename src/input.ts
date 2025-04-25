@@ -31,9 +31,12 @@ ffmpeg.ffprobe(inputFile, (err, data: FfMetaData) => {
       }))
       .filter((dt) => dt.adaptedResolution?.height);
     // @ts-ignore
-    data.audios = data.streams.filter((dt) => dt.codec_type === "audio");
+    data.audios = data.streams
+      .map((dt) => ({ ...dt, language: dt.tags?.language?.trim() }))
+      .filter((dt) => dt.codec_type === "audio");
     // @ts-ignore
     data.subtitles = data.streams.filter((dt) => dt.codec_type === "subtitle");
+
     const str = JSON.stringify(data, null, 2);
     writeFileSync("./metadata.json", str, { encoding: "utf-8" });
 

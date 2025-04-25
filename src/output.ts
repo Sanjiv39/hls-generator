@@ -16,13 +16,13 @@ import { convertBitsToUnit } from "./utils/bits.js";
 // data
 // @ts-ignore
 import { config } from "../config.js";
-const fileMetaData = await import("../metadata.json", {
+let fileMetaData = await import("../metadata.json", {
   assert: { type: "json" },
 });
 import { FfMetaData, FfOptions } from "./types/ffmpeg.js";
 import { Device, Config } from "./types/config-types.js";
 // @ts-ignore
-const metadata: FfMetaData = fileMetaData.default;
+let metadata: FfMetaData = fileMetaData.default;
 
 // console.log(metadata);
 
@@ -46,14 +46,15 @@ const outputFolder = path
   .replace("\\", "/");
 const ffmpegInput = Ffmpeg(inputFile);
 
-Ffmpeg.getAvailableEncoders((_, encoders) => {
-  encoders;
-});
-
-const generateOutput = async () => {
+const processVideo = async (
+  metadata: FfMetaData,
+  options: FfOptions<Device>,
+  inputOptions: FfOptions<Device>,
+  hlsTime: number
+) => {
   try {
     // Videos
-    console.log(metadata.videos);
+    // console.log(metadata.videos);
     const videos =
       metadata.videos
         ?.map((dt) => ({
@@ -82,7 +83,8 @@ const generateOutput = async () => {
           // &&
           // !!dt.bitrates?.[dt.resolution.key]
         ) || [];
-    console.log(videos.length);
+    // console.log(videos.length);
+
     const video =
       (typeof config.chunkVideoIndex === "number" &&
         !Number.isNaN(config.chunkVideoIndex) &&
@@ -104,43 +106,8 @@ const generateOutput = async () => {
       )
       .map((dt) => ({ ...(dt[1] as Required<(typeof dt)[1]>) }));
 
-    // Config options input
-    const iOptions = {
-      // decoder settings
-      hwaccel: getValidAccelerator(
-        config.decodingDevice || "none",
-        config.accelerator
-      ),
-    };
-
-    // Config options output
-    const oOptions: FfOptions<Device> = {
-      // encoder settings
-      preset:
-        (config.preset &&
-          getValidPreset(config.encodingDevice || "none", config.preset)) ||
-        undefined,
-      crf:
-        (config.decodingDevice === "intel" &&
-          typeof config.crf === "number" &&
-          !Number.isNaN(config.crf) &&
-          Number.isFinite(config.crf) &&
-          config.crf > 0 &&
-          config.crf) ||
-        undefined,
-      threads:
-        ((config.decodingDevice === "intel" ||
-          config.decodingDevice === "amd") &&
-          typeof config.threads === "number" &&
-          !Number.isNaN(config.threads) &&
-          Number.isFinite(config.threads) &&
-          config.threads > 0 &&
-          config.threads) ||
-        undefined,
-    };
-    // default codecs
+    // default codec
     const vCodec = getValidVideoCodec(config.encodingDevice, config.videoCodec);
-    const aCodec = getValidAudioCodec(config.audioCodec);
 
     // User video mappings
     const userVMappings: Exclude<
@@ -148,15 +115,8 @@ const generateOutput = async () => {
       null | undefined | false
     > = Array.isArray(config.videoMappings) ? config.videoMappings : [];
 
-    const hlsTime =
-      (typeof config.hlsChunkTime === "number" &&
-        Number.isFinite(config.hlsChunkTime) &&
-        config.hlsChunkTime > 0 &&
-        config.hlsChunkTime) ||
-      10;
-
-    // Video process
-    const outputOptions = Object.entries(oOptions)
+    // Video process-----------------------------------------------------
+    const outputOptions = Object.entries(options)
       .filter((dt) => dt[1] && dt[0])
       .map((dt) => `-${dt[0]} ${String(dt[1]).trim()}`)
       .concat([
@@ -206,10 +166,10 @@ const generateOutput = async () => {
           config.videoSegment || config.segment || "segment%d.ts"
         }`,
       ]);
-    const videoPr = await new Promise<boolean>((res, rej) => {
+    await new Promise<boolean>((res, rej) => {
       ffmpegInput
         .inputOptions(
-          Object.entries(iOptions)
+          Object.entries(inputOptions)
             .filter((dt) => dt[1] && dt[0])
             .map((dt) => `-${dt[0]} ${String(dt[1]).trim()}`)
         )
@@ -246,6 +206,170 @@ const generateOutput = async () => {
         })
         .run();
     });
+  } catch (err) {
+    console.log("Error processing video :", err);
+  }
+};
+
+const processAudio = async (
+  metadata: FfMetaData,
+  options: FfOptions<Device>,
+  inputOptions: FfOptions<Device>,
+  hlsTime: number
+) => {
+  try {
+    const audios = metadata.audios || [];
+
+    const aCodec = getValidAudioCodec(config.audioCodec);
+    const userAMappings: Exclude<
+      Config<Device>["audioMappings"],
+      null | undefined | false
+    > = Array.isArray(config.audioMappings) ? config.audioMappings : [];
+
+    const outputOptions = Object.entries(options)
+      .filter((dt) => dt[1] && dt[0])
+      .map((dt) => `-${dt[0]} ${String(dt[1]).trim()}`)
+      .concat([
+        // mappings
+        ...audios.map((dt) => `-map 0:${dt.index}`),
+        // codecs
+        ...audios.map(
+          (dt, i) =>
+            `-c:a:${i} ${
+              userAMappings[i]?.codec?.trim().toLowerCase() || aCodec
+            }`
+        ),
+        "-f hls",
+        `-hls_time ${hlsTime}`,
+        `-hls_playlist_type vod`,
+        // mapping definitions
+        "-var_stream_map",
+        `${audios
+          .map(
+            (dt, i) =>
+              `a:${i},name:${
+                userAMappings[i]?.name?.trim() ||
+                dt.language ||
+                `audio-${i + 1}`
+              }`
+          )
+          .join(" ")}`,
+        `-master_pl_name ${
+          config.hlsMasterFile?.trim()?.match(/(.| )+[.]m3u8/)?.[0] ||
+          "master.m3u8"
+        }`,
+        // bitrates
+        ...audios.map(
+          (dt, i) =>
+            `-b:a:${i} ${Math.round(
+              convertBitsToUnit(
+                (userAMappings[i]?.bitrate || dt.bit_rate) as number,
+                "k"
+              )?.metric || 0
+            )}k`
+        ),
+        `-hls_segment_filename ${outputFolder}/audio/%v/${
+          config.audioSegment || config.segment || "segment%d.ts"
+        }`,
+      ]);
+    await new Promise<boolean>((res, rej) => {
+      ffmpegInput
+        .inputOptions(
+          Object.entries(inputOptions)
+            .filter((dt) => dt[1] && dt[0])
+            .map((dt) => `-${dt[0]} ${String(dt[1]).trim()}`)
+        )
+        .outputOptions(outputOptions)
+        .output(
+          `${outputFolder}/audio/%v/${
+            config.audioSingleM3u8?.trim()?.match(/(.| )+[.]m3u8/)?.[0] ||
+            "index.m3u8"
+          }`
+        )
+        .on("start", (commandLine) => {
+          console.log("Audio processing started...............");
+          console.log("FFmpeg command:", commandLine);
+          writeFileSync("./command.sh", commandLine);
+        })
+        .on("progress", (progress) => {
+          console.log(
+            `Audio process progress => ${
+              progress.percent?.toFixed(2) || 0
+            }%, frames = ${progress.frames}, speed = ${
+              progress.currentKbps || 0
+            }kbps - ${progress.currentFps || 0}fps, target = ${
+              progress.targetSize
+            }, timestamp = ${progress.timemark}`
+          );
+        })
+        .on("end", () => {
+          console.log("✅ Done generating audio chunks!");
+          res(true);
+        })
+        .on("error", (err) => {
+          console.error("❌ FFmpeg Error:", err.message);
+          rej(err);
+        })
+        .run();
+    });
+  } catch (err) {
+    console.log("Error processing audio :", err);
+  }
+};
+
+const generateOutput = async () => {
+  try {
+    // Videos
+    // console.log(metadata.videos);
+
+    // Config options input
+    const iOptions = {
+      // decoder settings
+      hwaccel: getValidAccelerator(
+        config.decodingDevice || "none",
+        config.accelerator
+      ),
+    };
+
+    // Config options output
+    const oOptions: FfOptions<Device> = {
+      // encoder settings
+      preset:
+        (config.preset &&
+          getValidPreset(config.encodingDevice || "none", config.preset)) ||
+        undefined,
+      crf:
+        (config.decodingDevice === "intel" &&
+          typeof config.crf === "number" &&
+          !Number.isNaN(config.crf) &&
+          Number.isFinite(config.crf) &&
+          config.crf > 0 &&
+          config.crf) ||
+        undefined,
+      threads:
+        ((config.decodingDevice === "intel" ||
+          config.decodingDevice === "amd") &&
+          typeof config.threads === "number" &&
+          !Number.isNaN(config.threads) &&
+          Number.isFinite(config.threads) &&
+          config.threads > 0 &&
+          config.threads) ||
+        undefined,
+    };
+    // default codecs
+
+    const hlsTime =
+      (typeof config.hlsChunkTime === "number" &&
+        Number.isFinite(config.hlsChunkTime) &&
+        config.hlsChunkTime > 0 &&
+        config.hlsChunkTime) ||
+      10;
+
+    // Video process-----------------------------------------------------
+    await processVideo(metadata, oOptions, iOptions, hlsTime);
+
+    // Audio process-----------------------------------------------------
+    await processAudio(metadata, oOptions, iOptions, hlsTime);
   } catch (err) {
     console.log(err);
   }

@@ -21,7 +21,7 @@ export type FfMetaData = {
     : FfprobeData[K];
 } & Partial<{
   videos: (FfProbeStreamTagged & { codec_type: "video" })[];
-  audios: (FfProbeStreamTagged & { codec_type: "audio" })[];
+  audios: (FfProbeStreamTagged & { codec_type: "audio"; language?: string })[];
   subtitles: (FfProbeStreamTagged & { codec_type: "subtitle" })[];
 }>;
 
