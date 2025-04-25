@@ -88,7 +88,6 @@ export const audioCodecs = ["aac", "mp3", "ac3", "eac3"] as const;
 export type AudioCodec = (typeof audioCodecs)[number];
 
 // Mappings
-
 export type VideoMapping<D extends Device> = {
   name: string;
   /**
@@ -188,17 +187,19 @@ export type Config<D extends Device = "none"> = {
    * @default true
    */
   chunkAudio: boolean;
+
   /**
-   * @description Which video index you want to get chunked starting from 1 out of available. Defaults to first highest resolution found with most bitrate.
+   * @description Which video index you want to get chunked from `metadata.json`. Defaults to first highest resolution found with most bitrate.
    * @example 1
    */
   chunkVideoIndex: number;
   /**
-   * @description What audio indexes you want to get chunked starting from 1 out of available. Defaults to all audios. Mapping indexes will update by this from 0 till length of passed indexes.
+   * @description What audio indexes you want to get chunked from `metadata.json`. Defaults to all audios.
    * @example [1, 2]
    * @example 2
    */
   chunkAudioIndexes: number | number[];
+
   /**
    * @description Codec will be used for video chunking depending on your encoder device. Please check for supported ones
    * @default "libx264"
@@ -209,11 +210,13 @@ export type Config<D extends Device = "none"> = {
    * @default "aac"
    */
   audioCodec: AudioCodec;
+
   /**
    * @description The file that will contain audio, video and subs
    * @default "master.m3u8"
    */
   hlsMasterFile: string;
+
   /**
    * @description Chunk segment name (%d refers to chunk id). Gets overwritten by videoSegment and audioSegment if exists
    * @default "segment%d.ts"
@@ -229,6 +232,7 @@ export type Config<D extends Device = "none"> = {
    * @default "segment%d.ts"
    */
   audioSegment: string;
+
   /**
    * @description M3u8 file that holds single video type chunks (like m3u8 for 1080p chunks)
    * @default "index.m3u8"
@@ -241,11 +245,16 @@ export type Config<D extends Device = "none"> = {
   audioSingleM3u8: string;
 
   /**
+   * @description seconds to delay subtitle start by
+   * @default 0
+   */
+  delaySubsBy: number;
+
+  /**
    *  @description Custom video output mappings respective to their resolutions fetched from metadata. Array or null. By default gives mappings of highest resolution till 360p
    * @example [{res: "1280x720p", bitrate: "1200k", name: "HD"}]
    */
   videoMappings: VideoMapping<Device>[] | null | undefined;
-
   /**
    *  @description Custom audio output mappings respective to their indexes fetched from metadata. Array or null. By default gives mappings with indiced names and metadata based settings
    * @example [{name: "eng", bitrate: "192k", channels: 2}]
