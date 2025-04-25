@@ -41,4 +41,7 @@
 # ffmpeg -i "movie.mkv" -preset veryfast -crf 30 -threads 100 -map 0:2 -map 0:1 -c:a aac -f hls -hls_time 10 -hls_playlist_type vod -var_stream_map "a:0,name:eng a:1,name:hin" -master_pl_name "master.m3u8" -ac:0 2 -b:a:0 300k -ac:1 2 -b:a:1 192k -hls_segment_filename "test/audio/%v/segment%d.ts" "test/audio/%v/index.m3u8"
 
 # Only subs
-# ffmpeg -i "movie.mkv" -preset veryfast -crf 30 -threads 100 -map 0:3 -c:s webvtt -f segment -segment_time 10 -segment_list "test/subs/eng/index.m3u8" -segment_list_type m3u8 -segment_format webvtt "test/subs/eng/segment%d.vtt"
+# ffmpeg -i "D:/Content/Captain.America.Brave.New.World.(2025).WEB-DL.1080p.x264.Hin.+.Eng-AAC.5.1.192Kbps.ESub.Vegamovies.is.mkv" -preset veryfast -crf 30 -threads 100 -map 0:3 -c:s webvtt -f segment -segment_time 10 -segment_list "test/subs/eng/index.m3u8" -segment_list_type m3u8 -segment_format webvtt "test/subs/eng/segment%d.vtt"
+
+# Use below command to generate a single vtt and create a master m3u8 of the vtt file with total duration in info to be added in hls
+# ffmpeg -i "D:/Content/Captain.America.Brave.New.World.(2025).WEB-DL.1080p.x264.Hin.+.Eng-AAC.5.1.192Kbps.ESub.Vegamovies.is.mkv" -preset veryfast -crf 30 -threads 100 -map 0:3 "test/subs/eng/segment.vtt" -c:s webvtt -f hls -hls_time 10 -hls_list_size 0 -segment_list "test/subs/eng/total.m3u8" 

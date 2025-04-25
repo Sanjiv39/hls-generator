@@ -1,0 +1,95 @@
+{
+  "allowCache": true,
+  "discontinuityStarts": [],
+  "dateRanges": [],
+  "iFramePlaylists": [],
+  "segments": [],
+  "mediaGroups": {
+    "AUDIO": {
+      "audio": {
+        "English": {
+          "default": true,
+          "autoselect": true,
+          "language": "en",
+          "uri": "audio/eng/index.m3u8"
+        },
+        "Hindi": {
+          "default": false,
+          "autoselect": true,
+          "language": "hi",
+          "uri": "audio/hin/index.m3u8"
+        }
+      }
+    },
+    "VIDEO": {},
+    "CLOSED-CAPTIONS": {},
+    "SUBTITLES": {
+      "subs": {
+        "English": {
+          "default": true,
+          "autoselect": true,
+          "language": "en",
+          "uri": "subs/eng/index.m3u8"
+        }
+      }
+    }
+  },
+  "playlists": [
+    {
+      "attributes": {
+        "SUBTITLES": "subs",
+        "AUDIO": "audio",
+        "CODECS": "avc1.64002a",
+        "RESOLUTION": {
+          "width": 1920,
+          "height": 1080
+        },
+        "BANDWIDTH": 3520000
+      },
+      "uri": "video/1080p/index.m3u8",
+      "timeline": 0
+    },
+    {
+      "attributes": {
+        "SUBTITLES": "subs",
+        "AUDIO": "audio",
+        "CODECS": "avc1.640020",
+        "RESOLUTION": {
+          "width": 1280,
+          "height": 720
+        },
+        "BANDWIDTH": 1980000
+      },
+      "uri": "video/720p/index.m3u8",
+      "timeline": 0
+    },
+    {
+      "attributes": {
+        "SUBTITLES": "subs",
+        "AUDIO": "audio",
+        "CODECS": "avc1.64001f",
+        "RESOLUTION": {
+          "width": 854,
+          "height": 480
+        },
+        "BANDWIDTH": 1100000
+      },
+      "uri": "video/480p/index.m3u8",
+      "timeline": 0
+    },
+    {
+      "attributes": {
+        "SUBTITLES": "subs",
+        "AUDIO": "audio",
+        "CODECS": "avc1.64001f",
+        "RESOLUTION": {
+          "width": 640,
+          "height": 360
+        },
+        "BANDWIDTH": 770000
+      },
+      "uri": "video/360p/index.m3u8",
+      "timeline": 0
+    }
+  ]
+}
