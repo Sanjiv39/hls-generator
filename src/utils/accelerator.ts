@@ -2,6 +2,8 @@ import {
   Accelerator,
   amdAccelerators,
   Device,
+  GeneralAccelerator,
+  generalAccelerators,
   intelAccelerators,
   nvidiaAccelerators,
 } from "../types/config-types.js";
@@ -42,10 +44,12 @@ export const getValidAccelerator = <D extends Device>(
           // @ts-ignore
           (intelAccelerators as string[]).includes(accelerator))) &&
         (accelerator as Accelerator<Device>)) ||
+      (generalAccelerators.includes(accelerator as GeneralAccelerator) &&
+        (accelerator as GeneralAccelerator)) ||
       undefined;
     return valid;
   } catch (err) {
-    console.error("Error getting accelerator :", err);
+    console.error("Error getting valid accelerator :", err);
     return undefined;
   }
 };

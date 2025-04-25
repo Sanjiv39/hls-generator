@@ -41,17 +41,26 @@ export type Presets<D extends Device = "none"> = D extends "nvidia"
 
 // Accelerators
 export const nvidiaAccelerators = ["cuda", "cuvid", "nvdec"] as const;
-export const amdAccelerators = ["d3d11va", "dxva2"] as const;
-export const intelAccelerators = ["qsv", "d3d11va", "vaapi"] as const;
+export const amdAccelerators = ["dxva2"] as const;
+export const intelAccelerators = ["qsv", "vaapi"] as const;
+export const generalAccelerators = [
+  "d3d11va",
+  "opencl",
+  "vulkan",
+  "d3d12va",
+] as const;
 
 export type NvidiaAccelerator = (typeof nvidiaAccelerators)[number];
 export type AMDAccelerator = (typeof amdAccelerators)[number];
 export type IntelAccelerator = (typeof intelAccelerators)[number];
-export type Accelerator<D extends Device = "none"> = D extends "nvidia"
-  ? NvidiaAccelerator
-  : D extends "amd"
-  ? AMDAccelerator
-  : IntelAccelerator;
+export type GeneralAccelerator = (typeof generalAccelerators)[number];
+export type Accelerator<D extends Device = "none"> =
+  | (D extends "nvidia"
+      ? NvidiaAccelerator
+      : D extends "amd"
+      ? AMDAccelerator
+      : IntelAccelerator)
+  | GeneralAccelerator;
 
 // Codecs
 export const nvidiaCodecs = ["h264_nvenc", "hevc_nvenc", "av1_nvenc"] as const;
@@ -150,7 +159,7 @@ export type Config<D extends Device = "none"> = {
    */
   decodingDevice: Device;
   /**
-   * @description Video decoding accelerator depending on `decodingDevice`
+   * @description Video decoding hardware accelerator depending on `decodingDevice`. Please check which one of your supports
    * @default undefined
    */
   accelerator: Accelerator<Device> | undefined;
@@ -191,7 +200,7 @@ export type Config<D extends Device = "none"> = {
    */
   chunkAudioIndexes: number | number[];
   /**
-   * @description Codec will be used for video chunking
+   * @description Codec will be used for video chunking depending on your encoder device. Please check for supported ones
    * @default "libx264"
    */
   videoCodec: VideoCodec<Device>;
