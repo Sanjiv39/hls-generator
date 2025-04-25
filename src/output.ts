@@ -2,6 +2,7 @@ import Ffmpeg, {
   FfmpegCommand,
   FfmpegCommandOptions,
   FfprobeStream,
+  getAvailableEncoders,
 } from "fluent-ffmpeg";
 import path from "path";
 import { writeFileSync } from "fs";
@@ -44,6 +45,10 @@ const outputFolder = path
   )
   .replace("\\", "/");
 const ffmpegInput = Ffmpeg(inputFile);
+
+Ffmpeg.getAvailableEncoders((_, encoders) => {
+  encoders;
+});
 
 const generateOutput = async () => {
   try {
@@ -203,11 +208,11 @@ const generateOutput = async () => {
       ]);
     const videoPr = await new Promise<boolean>((res, rej) => {
       ffmpegInput
-        // .addInputOptions(
-        //   Object.entries(iOptions)
-        //     .filter((dt) => dt[1] && dt[0])
-        //     .map((dt) => `-${dt[0]} ${String(dt[1]).trim()}`)
-        // )
+        .inputOptions(
+          Object.entries(iOptions)
+            .filter((dt) => dt[1] && dt[0])
+            .map((dt) => `-${dt[0]} ${String(dt[1]).trim()}`)
+        )
         .outputOptions(outputOptions)
         .output(
           `${outputFolder}/video/%v/${
