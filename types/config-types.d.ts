@@ -88,7 +88,6 @@ export const audioCodecs = ["aac", "mp3", "ac3", "eac3"] as const;
 export type AudioCodec = (typeof audioCodecs)[number];
 
 // Mappings
-
 export type VideoMapping<D extends Device> = {
   name: string;
   /**
