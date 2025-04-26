@@ -301,6 +301,9 @@ const processAudio = async (
       .concat([
         // mappings
         ...audios.map((dt) => `-map 0:${dt.index}`),
+        "-f hls",
+        `-hls_time ${hlsTime}`,
+        `-hls_playlist_type vod`,
         // codecs
         ...audios.map(
           (dt, i) =>
@@ -308,16 +311,13 @@ const processAudio = async (
               userAMappings[i]?.codec?.trim().toLowerCase() || aCodec
             }`
         ),
-        "-f hls",
-        `-hls_time ${hlsTime}`,
-        `-hls_playlist_type vod`,
         // mapping definitions
         "-var_stream_map",
         `${audios
           .map(
             (dt, i) =>
               `a:${i},name:${
-                userAMappings[i]?.name?.trim() || `audio-${i + 1}`
+                userAMappings[i]?.name?.trim() || `audio_${i + 1}`
               }`
           )
           .join(" ")}`,
@@ -332,7 +332,7 @@ const processAudio = async (
               convertBitsToUnit(
                 (userAMappings[i]?.bitrate || dt.bit_rate) as number,
                 "k"
-              )?.metric || 0
+              )?.metric || 128
             )}k`
         ),
         `-hls_segment_filename ${outputFolder}/audio/%v/${
