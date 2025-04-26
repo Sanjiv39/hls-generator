@@ -13,6 +13,7 @@ import { getValidPreset } from "./utils/presets.js";
 import { getValidAccelerator } from "./utils/accelerator.js";
 import { getValidAudioCodec, getValidVideoCodec } from "./utils/codecs.js";
 import { convertBitsToUnit } from "./utils/bits.js";
+import { validateNumber } from "./utils/number.js";
 // data
 // @ts-ignore
 import { config } from "../config.js";
@@ -21,7 +22,6 @@ let fileMetaData = await import("../metadata.json", {
 });
 import { FfMetaData, FfOptions } from "./types/ffmpeg.js";
 import { Device, Config } from "./types/config-types.js";
-import { validateNumber } from "./utils/number.js";
 // @ts-ignore
 let metadata: FfMetaData = fileMetaData.default;
 
@@ -461,9 +461,6 @@ const processSubtitles = async (
 
 const generateOutput = async () => {
   try {
-    // Videos
-    // console.log(metadata.videos);
-
     // Config options input
     const iOptions = {
       // decoder settings
@@ -498,7 +495,6 @@ const generateOutput = async () => {
           config.threads) ||
         undefined,
     };
-    // default codecs
 
     const hlsTime =
       (typeof config.hlsChunkTime === "number" &&
