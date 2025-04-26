@@ -301,16 +301,19 @@ const processAudio = async (
       .concat([
         // mappings
         ...audios.map((dt) => `-map 0:${dt.index}`),
-        "-f hls",
-        `-hls_time ${hlsTime}`,
-        `-hls_playlist_type vod`,
+        "-f",
+        "hls",
+        `-hls_time`,
+        `${hlsTime}`,
+        `-hls_playlist_type`,
+        `vod`,
         // codecs
-        ...audios.map(
-          (dt, i) =>
-            `-c:a:${i} ${
-              userAMappings[i]?.codec?.trim().toLowerCase() || aCodec
-            }`
-        ),
+        ...audios
+          .map((dt, i) => [
+            `-c:a:${i}`,
+            `${userAMappings[i]?.codec?.trim().toLowerCase() || aCodec}`,
+          ])
+          .flatMap((dt) => dt),
         // mapping definitions
         "-var_stream_map",
         `${audios
@@ -321,21 +324,25 @@ const processAudio = async (
               }`
           )
           .join(" ")}`,
-        `-master_pl_name ${
+        `-master_pl_name`,
+        `${
           config.hlsMasterFile?.trim()?.match(/(.| )+[.]m3u8/)?.[0] ||
           "master.m3u8"
         }`,
         // bitrates
-        ...audios.map(
-          (dt, i) =>
-            `-b:a:${i} ${Math.round(
+        ...audios
+          .map((dt, i) => [
+            `-b:a:${i}`,
+            `${Math.round(
               convertBitsToUnit(
                 (userAMappings[i]?.bitrate || dt.bit_rate) as number,
                 "k"
               )?.metric || 128
-            )}k`
-        ),
-        `-hls_segment_filename ${outputFolder}/audio/%v/${
+            )}k`,
+          ])
+          .flatMap((dt) => dt),
+        `-hls_segment_filename`,
+        `${outputFolder}/audio/%v/${
           config.audioSegment || config.segment || "segment%d.ts"
         }`,
       ]);
