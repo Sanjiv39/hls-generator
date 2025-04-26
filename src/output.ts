@@ -317,9 +317,7 @@ const processAudio = async (
           .map(
             (dt, i) =>
               `a:${i},name:${
-                userAMappings[i]?.name?.trim() ||
-                dt.language ||
-                `audio-${i + 1}`
+                userAMappings[i]?.name?.trim() || `audio-${i + 1}`
               }`
           )
           .join(" ")}`,
@@ -365,15 +363,6 @@ const processAudio = async (
           appendFileSync("./command.sh", commandLine);
         })
         .on("progress", (progress) => {
-          // console.log(
-          //   `Audio process progress => ${
-          //     progress.percent?.toFixed(2) || 0
-          //   }%, frames = ${progress.frames}, speed = ${
-          //     progress.currentKbps || 0
-          //   }kbps - ${progress.currentFps || 0}fps, target = ${
-          //     progress.targetSize
-          //   }, timestamp = ${progress.timemark}`
-          // );
           progressBar.update(progress.timemark);
         })
         .on("end", () => {
