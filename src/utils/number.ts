@@ -18,21 +18,21 @@ export type ValidateNumberOptions<D extends any = number> = Partial<{
    * @description Should validate as greater than 0.
    * @default true
    */
-  validateCountale: boolean;
+  validateCountable: boolean;
   /**
    * @description Customized validation. Executes after all generic validations
    * @default undefined
    */
-  customValidation: (value: number) => number | undefined;
+  customValidation: (value: number) => number | D | undefined;
 }>;
 export const validateNumber = <D extends any = number>(
   value: any,
-  options?: ValidateNumberOptions
-): number | D => {
+  options?: ValidateNumberOptions<D>
+): D => {
   const allOptions: ValidateNumberOptions<D> = {
     validateNaN: true,
     validateFinite: true,
-    validateCountale: true,
+    validateCountable: true,
     defaultValue: 0,
     ...options,
   };
@@ -46,13 +46,13 @@ export const validateNumber = <D extends any = number>(
     if (allOptions.validateFinite && !Number.isFinite(value)) {
       return allOptions.defaultValue;
     }
-    if (allOptions.validateCountale && value <= 0) {
+    if (allOptions.validateCountable && value <= 0) {
       return allOptions.defaultValue;
     }
     if (typeof allOptions.customValidation === "function") {
       value = allOptions.customValidation(value);
     }
-    return value as number;
+    return value as D;
   } catch (err) {
     return allOptions.defaultValue;
   }

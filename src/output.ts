@@ -431,10 +431,9 @@ const processSubtitles = async (
         const runner = Ffmpeg();
         const name = userMappings[i]?.name || `sub-${i + 1}`;
         const totalDuration =
-          (moment.duration(subtitleData.duration).isValid() &&
-            moment.duration(subtitleData.duration).asSeconds()) ||
-          0;
-        const progressBar = new ProgressBar({
+          ProgressBar.validateTimestamp(subtitleData.duration || "")
+            ?.parsedTimestamp || "00:00:00";
+        const progressBar = new ProgressBar(totalDuration, {
           format:
             "Progress |" +
             "{bar}" +
@@ -446,7 +445,7 @@ const processSubtitles = async (
           hideCursor: true,
           barsize: 80,
         });
-        progressBar.bar?.start(totalDuration, 0);
+        progressBar.start();
         await new Promise<boolean>((res, rej) => {
           runner
             .input(inputFile)
@@ -486,7 +485,7 @@ const processSubtitles = async (
               // );
               if (moment.duration(progress.timemark).isValid()) {
                 const percent = moment.duration(progress.timemark).asSeconds();
-                progressBar.updater(percent);
+                progressBar.update(percent);
               }
             })
             .on("end", () => {
