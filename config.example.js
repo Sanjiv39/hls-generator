@@ -1,4 +1,4 @@
-/** @typedef {import("./types/config-types.d.ts").Config} Config */
+/** @typedef {import("./src/types/config-types.js").Config} Config */
 
 /** @type {Partial<Config>} */
 export const config = {

@@ -121,6 +121,10 @@ export type AudioMapping = {
   channels?: 1 | 2;
   codec?: AudioCodec;
 };
+export type SubtitleMapping = {
+  name?: string;
+  delayBy?: number;
+};
 
 export type Config<D extends Device = "none"> = {
   /**
@@ -187,6 +191,11 @@ export type Config<D extends Device = "none"> = {
    * @default true
    */
   chunkAudio: boolean;
+  /**
+   * @description Do chunk subtitles or not if present any
+   * @default true
+   */
+  chunkSubtitle: boolean;
 
   /**
    * @description Which video index you want to get chunked from `metadata.json`. Defaults to first highest resolution found with most bitrate.
@@ -195,10 +204,16 @@ export type Config<D extends Device = "none"> = {
   chunkVideoIndex: number;
   /**
    * @description What audio indexes you want to get chunked from `metadata.json`. Defaults to all audios.
-   * @example [1, 2]
+   * @example [2, 3]
    * @example 2
    */
   chunkAudioIndexes: number | number[];
+  /**
+   * @description What subtitle indexes you want to get chunked from `metadata.json`. Defaults to all subtitles.
+   * @example [3, 4]
+   * @example 3
+   */
+  chunkSubtitleIndexes: number | number[];
 
   /**
    * @description Codec will be used for video chunking depending on your encoder device. Please check for supported ones
@@ -245,19 +260,24 @@ export type Config<D extends Device = "none"> = {
   audioSingleM3u8: string;
 
   /**
-   * @description seconds to delay subtitle start by
+   * @description Seconds to delay subtitle start by. Will get overwritten if specified in `subtitleMappings`.
    * @default 0
    */
   delaySubsBy: number;
 
   /**
-   *  @description Custom video output mappings respective to their resolutions fetched from metadata. Array or null. By default gives mappings of highest resolution till 360p
+   *  @description Custom video output mappings respective to their resolutions fetched from `metadata.json`. Array or null. By default gives mappings of highest resolution till 360p
    * @example [{res: "1280x720p", bitrate: "1200k", name: "HD"}]
    */
   videoMappings: VideoMapping<Device>[] | null | undefined;
   /**
-   *  @description Custom audio output mappings respective to their indexes fetched from metadata. Array or null. By default gives mappings with indiced names and metadata based settings
+   *  @description Custom audio output mappings respective to their indexes fetched from `metadata.json`. Array or null. By default gives mappings with indiced names and metadata based settings
    * @example [{name: "eng", bitrate: "192k", channels: 2}]
    */
   audioMappings: AudioMapping[] | null | undefined;
+  /**
+   *  @description Custom subtitle output mappings respective to their indexes fetched from `metadata.json`. Array or null. By default gives mappings with indiced names and metadata based settings
+   * @example [{name: "eng"}]
+   */
+  subtitleMappings: SubtitleMapping[] | null | undefined;
 };

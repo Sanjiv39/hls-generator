@@ -5,7 +5,7 @@ import Ffmpeg, {
   getAvailableEncoders,
 } from "fluent-ffmpeg";
 import path from "path";
-import { writeFileSync } from "fs";
+import { appendFileSync, existsSync, mkdirSync, writeFileSync } from "fs";
 import { v7 } from "uuid";
 // utils
 import { getFittedResolution, calculateAllBitrates } from "./utils/bitrate.js";
@@ -21,6 +21,7 @@ let fileMetaData = await import("../metadata.json", {
 });
 import { FfMetaData, FfOptions } from "./types/ffmpeg.js";
 import { Device, Config } from "./types/config-types.js";
+import { validateNumber } from "./utils/number.js";
 // @ts-ignore
 let metadata: FfMetaData = fileMetaData.default;
 
@@ -44,6 +45,9 @@ const outputFolder = path
       ""
   )
   .replace("\\", "/");
+
+console.log("Input :", inputFile);
+console.log("Output :", outputFolder);
 const ffmpegInput = Ffmpeg(inputFile);
 
 const processVideo = async (
@@ -311,7 +315,11 @@ const processAudio = async (
         .on("start", (commandLine) => {
           console.log("Audio processing started...............");
           console.log("FFmpeg command:", commandLine);
-          writeFileSync("./command.sh", commandLine);
+          appendFileSync(
+            "./command.sh",
+            "\n\nAudio" + Array(50).fill("-").join("")
+          );
+          appendFileSync("./command.sh", commandLine);
         })
         .on("progress", (progress) => {
           console.log(
@@ -336,6 +344,118 @@ const processAudio = async (
     });
   } catch (err) {
     console.log("Error processing audio :", err);
+  }
+};
+
+const processSubtitles = async (
+  metadata: FfMetaData,
+  options: FfOptions<Device>,
+  inputOptions: FfOptions<Device>
+) => {
+  try {
+    const userIndexes =
+      (config.chunkSubtitleIndexes &&
+        [
+          ...(Array.isArray(config.chunkSubtitleIndexes)
+            ? config.chunkSubtitleIndexes
+            : [config.chunkSubtitleIndexes]),
+        ].filter((ind) =>
+          validateNumber(ind || 0, {
+            defaultValue: 0,
+          })
+        )) ||
+      null;
+    const subtitles = (metadata.subtitles || []).filter((dt) =>
+      userIndexes?.length ? userIndexes.includes(dt.index) : true
+    );
+
+    const codec = "webvtt";
+    const skipTime = validateNumber(config.delaySubsBy || 0, {
+      defaultValue: 0,
+    });
+    const userMappings: Exclude<
+      Config<Device>["subtitleMappings"],
+      null | undefined | false
+    > = Array.isArray(config.audioMappings) ? config.audioMappings : [];
+
+    if (!subtitles.length) {
+      throw new Error("No valid subtitles");
+    }
+
+    if (!existsSync(`${outputFolder}/subs`)) {
+      mkdirSync(`${outputFolder}/subs`, { recursive: true });
+    }
+
+    const outputOptions = Object.entries(options)
+      .filter((dt) => dt[1] && dt[0])
+      .map((dt) => `-${dt[0]} ${String(dt[1]).trim()}`)
+      .concat([
+        // mappings
+        ...subtitles.map((dt) => `-map 0:${dt.index}`),
+        // codecs
+        "-c:s",
+        codec,
+      ]);
+
+    await new Promise<boolean>((res, rej) => {
+      try {
+      } catch (err) {}
+      let runner = ffmpegInput.inputOptions(
+        Object.entries(inputOptions)
+          .filter((dt) => dt[1] && dt[0])
+          .map((dt) => `-${dt[0]} ${String(dt[1]).trim()}`)
+        // .concat(["-itsoffset", skipTime.toString()])
+      );
+      for (let i = 0; i < subtitles.length; i++) {
+        const subData = subtitles[i];
+        runner.addOutputOptions(
+          `-itsoffset ${
+            validateNumber(userMappings[i].delayBy, { defaultValue: 0 }) ||
+            skipTime
+          }`,
+          `-map 0:${subData.index}`,
+          "-c:s webvtt"
+        );
+        runner.addOutput(
+          `${outputFolder}/subs/${
+            userMappings[i].name || subData.language || `sub-${i + 1}`
+          }`
+        );
+      }
+
+      runner
+        .on("start", (commandLine) => {
+          console.log("Subtitle processing started...............");
+          console.log("FFmpeg command:", commandLine);
+          appendFileSync(
+            "./command.sh",
+            "\n\nSubtitles" + Array(50).fill("-").join("")
+          );
+          appendFileSync("./command.sh", commandLine);
+        })
+        .on("progress", (progress) => {
+          console.log(
+            `Subtitle process progress => ${
+              progress.percent?.toFixed(2) || 0
+            }%, frames = ${progress.frames}, speed = ${
+              progress.currentKbps || 0
+            }kbps - ${progress.currentFps || 0}fps, target = ${
+              progress.targetSize
+            }, timestamp = ${progress.timemark}`
+          );
+        })
+        .on("end", () => {
+          console.log("✅ Done generating subtitles!");
+          res(true);
+        })
+        .on("error", (err) => {
+          console.error("❌ FFmpeg Error:", err.message);
+          rej(err);
+        })
+        .run();
+    });
+  } catch (err) {
+    console.log("Error processing subtitles :", err);
   }
 };
 
@@ -387,13 +507,29 @@ const generateOutput = async () => {
         config.hlsChunkTime) ||
       10;
 
+    const doProcess = {
+      video: Object.hasOwn(config, "chunkVideo") ? !!config.chunkVideo : true,
+      audio: Object.hasOwn(config, "chunkAudio") ? !!config.chunkAudio : true,
+      subtitle: Object.hasOwn(config, "chunkSubtitle")
+        ? !!config.chunkSubtitle
+        : true,
+    };
+
+    writeFileSync("./command.sh", "");
     // Video process-----------------------------------------------------
-    await processVideo(metadata, oOptions, iOptions, hlsTime);
+    doProcess.video &&
+      (await processVideo(metadata, oOptions, iOptions, hlsTime));
 
     // Audio process-----------------------------------------------------
-    await processAudio(metadata, oOptions, iOptions, hlsTime);
+    doProcess.audio &&
+      (await processAudio(metadata, oOptions, iOptions, hlsTime));
+
+    // Subtitles process-----------------------------------------------------
+    doProcess.subtitle &&
+      (await processSubtitles(metadata, oOptions, iOptions));
+    console.log("End 🔚");
   } catch (err) {
-    console.log(err);
+    console.log("Error output generation :", err);
   }
 };
 

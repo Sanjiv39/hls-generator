@@ -22,7 +22,10 @@ export type FfMetaData = {
 } & Partial<{
   videos: (FfProbeStreamTagged & { codec_type: "video" })[];
   audios: (FfProbeStreamTagged & { codec_type: "audio"; language?: string })[];
-  subtitles: (FfProbeStreamTagged & { codec_type: "subtitle" })[];
+  subtitles: (FfProbeStreamTagged & {
+    codec_type: "subtitle";
+    language?: string;
+  })[];
 }>;
 
 export type FfOptions<D extends Device = "none"> = Partial<
