@@ -7,6 +7,7 @@ import Ffmpeg, {
 import path from "path";
 import { appendFileSync, existsSync, mkdirSync, writeFileSync } from "fs";
 import { v7 } from "uuid";
+import chalkAnimation from "chalk-animation";
 // utils
 import { getFittedResolution, calculateAllBitrates } from "./utils/bitrate.js";
 import { getValidPreset } from "./utils/presets.js";
@@ -22,6 +23,8 @@ let fileMetaData = await import("../metadata.json", {
 });
 import { FfMetaData, FfOptions } from "./types/ffmpeg.js";
 import { Device, Config } from "./types/config-types.js";
+import { ProgressBar } from "./utils/progress.js";
+import moment from "moment";
 // @ts-ignore
 let metadata: FfMetaData = fileMetaData.default;
 
@@ -104,6 +107,24 @@ const processVideo = async (
           a.resolution.height * (a.bitrates[a.resolution.key]?.bitrates || 0)
       )[0];
     console.log("Found", video.resolution, video.bitrates);
+
+    const totalDuration =
+      (moment.duration(video.duration).isValid() &&
+        moment.duration(video.duration).asSeconds()) ||
+      0;
+    const progressBar = new ProgressBar({
+      format:
+        "Progress |" +
+        "{bar}" +
+        `| {percentage}% | ETA: {eta}s || {value}/{total} secs`,
+      barCompleteChar: "\u2588",
+      barIncompleteChar: "\u2591",
+      barCompleteString: "✅",
+      barIncompleteString: "🔃",
+      hideCursor: true,
+      barsize: 80,
+    });
+    progressBar.bar?.start(totalDuration, 0);
 
     const resolutions = Object.entries(video.bitrates)
       .filter(
@@ -195,18 +216,23 @@ const processVideo = async (
           writeFileSync("./command.sh", commandLine);
         })
         .on("progress", (progress) => {
-          console.log(
-            `Video process progress => ${
-              progress.percent?.toFixed(2) || 0
-            }%, frames = ${progress.frames}, speed = ${
-              progress.currentKbps || 0
-            }kbps - ${progress.currentFps || 0}fps, target = ${
-              progress.targetSize
-            }, timestamp = ${progress.timemark}`
-          );
+          // console.log(
+          //   `Video process progress => ${
+          //     progress.percent?.toFixed(2) || 0
+          //   }%, frames = ${progress.frames}, speed = ${
+          //     progress.currentKbps || 0
+          //   }kbps - ${progress.currentFps || 0}fps, target = ${
+          //     progress.targetSize
+          //   }, timestamp = ${progress.timemark}`
+          // );
+          if (moment.duration(progress.timemark).isValid()) {
+            const percent = moment.duration(progress.timemark).asSeconds();
+            progressBar.updater(percent);
+          }
         })
         .on("end", () => {
           console.log("✅ Done generating video chunks!");
+          progressBar.bar?.stop();
           res(true);
         })
         .on("error", (err) => {
@@ -317,7 +343,7 @@ const processAudio = async (
           console.log("FFmpeg command:", commandLine);
           appendFileSync(
             "./command.sh",
-            "\n\nAudio" + Array(50).fill("-").join("")
+            "\n\nAudio" + Array(50).fill("-").join("") + "\n"
           );
           appendFileSync("./command.sh", commandLine);
         })
@@ -397,63 +423,95 @@ const processSubtitles = async (
         codec,
       ]);
 
-    await new Promise<boolean>((res, rej) => {
+    const subtitlePr = async (
+      subtitleData: (typeof subtitles)[number],
+      i: number
+    ) => {
       try {
-      } catch (err) {}
-      let runner = ffmpegInput.inputOptions(
-        Object.entries(inputOptions)
-          .filter((dt) => dt[1] && dt[0])
-          .map((dt) => `-${dt[0]} ${String(dt[1]).trim()}`)
-        // .concat(["-itsoffset", skipTime.toString()])
-      );
-      for (let i = 0; i < subtitles.length; i++) {
-        const subData = subtitles[i];
-        runner.addOutputOptions(
-          `-itsoffset ${
-            validateNumber(userMappings[i].delayBy, { defaultValue: 0 }) ||
-            skipTime
-          }`,
-          `-map 0:${subData.index}`,
-          "-c:s webvtt"
-        );
-        runner.addOutput(
-          `${outputFolder}/subs/${
-            userMappings[i].name || subData.language || `sub-${i + 1}`
-          }`
-        );
+        const runner = Ffmpeg();
+        const name = userMappings[i]?.name || `sub-${i + 1}`;
+        const totalDuration =
+          (moment.duration(subtitleData.duration).isValid() &&
+            moment.duration(subtitleData.duration).asSeconds()) ||
+          0;
+        const progressBar = new ProgressBar({
+          format:
+            "Progress |" +
+            "{bar}" +
+            `| {percentage}% | ETA: {eta}s || {value}/{total} secs`,
+          barCompleteChar: "\u2588",
+          barIncompleteChar: "\u2591",
+          barCompleteString: "✅",
+          barIncompleteString: "🔃",
+          hideCursor: true,
+          barsize: 80,
+        });
+        progressBar.bar?.start(totalDuration, 0);
+        await new Promise<boolean>((res, rej) => {
+          runner
+            .input(inputFile)
+            .inputOptions([
+              `-itsoffset`,
+              String(
+                validateNumber(userMappings[i]?.delayBy, { defaultValue: 0 }) ||
+                  skipTime
+              ),
+            ])
+            .outputOptions(`-map`, `0:${subtitleData.index}`, "-c:s", codec)
+            .output(
+              `${outputFolder}/subs/${
+                userMappings[i]?.name || `sub-${i + 1}`
+              }.vtt`
+            );
+          runner
+            .on("start", (commandLine) => {
+              console.log("Name :", name);
+              chalkAnimation.glitch("Processing...............").start();
+              console.log("FFmpeg command:", commandLine);
+              appendFileSync(
+                "./command.sh",
+                "\n\nSubtitle" + Array(50).fill("-").join("") + "\n"
+              );
+              appendFileSync("./command.sh", commandLine);
+            })
+            .on("progress", (progress) => {
+              // console.log(
+              //   `progress => ${progress.percent?.toFixed(2) || 0}%, frames = ${
+              //     progress.frames
+              //   }, speed = ${progress.currentKbps || 0}kbps - ${
+              //     progress.currentFps || 0
+              //   }fps, target = ${progress.targetSize}, timestamp = ${
+              //     progress.timemark
+              //   }`
+              // );
+              if (moment.duration(progress.timemark).isValid()) {
+                const percent = moment.duration(progress.timemark).asSeconds();
+                progressBar.updater(percent);
+              }
+            })
+            .on("end", () => {
+              console.log("✅ Generated subtitle", name);
+              progressBar.bar?.stop();
+              res(true);
+            })
+            .on("error", (err) => {
+              console.error("❌ FFmpeg Error:", err.message);
+              rej(err);
+            })
+            .run();
+        });
+      } catch (err) {
+        console.log("Error subtitle :", err);
       }
+    };
 
-      runner
-        .on("start", (commandLine) => {
-          console.log("Subtitle processing started...............");
-          console.log("FFmpeg command:", commandLine);
-          appendFileSync(
-            "./command.sh",
-            "\n\nSubtitles" + Array(50).fill("-").join("")
-          );
-          appendFileSync("./command.sh", commandLine);
-        })
-        .on("progress", (progress) => {
-          console.log(
-            `Subtitle process progress => ${
-              progress.percent?.toFixed(2) || 0
-            }%, frames = ${progress.frames}, speed = ${
-              progress.currentKbps || 0
-            }kbps - ${progress.currentFps || 0}fps, target = ${
-              progress.targetSize
-            }, timestamp = ${progress.timemark}`
-          );
-        })
-        .on("end", () => {
-          console.log("✅ Done generating subtitles!");
-          res(true);
-        })
-        .on("error", (err) => {
-          console.error("❌ FFmpeg Error:", err.message);
-          rej(err);
-        })
-        .run();
-    });
+    console.log("Starting to process subtitles.....................");
+    for (let i = 0; i < subtitles.length; i++) {
+      const subData = subtitles[i];
+      // Add cloned input with different delay [-itsoffset] as indexed with [i]
+      await subtitlePr(subData, i);
+    }
+    console.log("✅ Finished processing subtitles.....................");
   } catch (err) {
     console.log("Error processing subtitles :", err);
   }
@@ -511,6 +569,8 @@ const generateOutput = async () => {
         : true,
     };
 
+    chalkAnimation.rainbow("S T A R T").start();
+    console.log("❇️❇️❇️❇️❇️❇️❇️❇️❇️❇️❇️❇️❇️❇️❇️❇️❇️❇️❇️❇️❇️");
     writeFileSync("./command.sh", "");
     // Video process-----------------------------------------------------
     doProcess.video &&
@@ -523,8 +583,11 @@ const generateOutput = async () => {
     // Subtitles process-----------------------------------------------------
     doProcess.subtitle &&
       (await processSubtitles(metadata, oOptions, iOptions));
-    console.log("End 🔚");
+    chalkAnimation
+      .karaoke("E N D 🔚🔚🔚🔚🔚🔚🔚🔚🔚🔚🔚🔚🔚🔚🔚🔚🔚🔚🔚🔚🔚🔚🔚")
+      .start();
   } catch (err) {
+    chalkAnimation.pulse("E R R O R ❌❌❌❌❌❌❌❌❌❌❌❌").start();
     console.log("Error output generation :", err);
   }
 };

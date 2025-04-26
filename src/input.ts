@@ -28,6 +28,9 @@ ffmpeg.ffprobe(inputFile, (err, data: FfMetaData) => {
           Number(String(dt.height)),
           Number(String(dt.bit_rate)) || Number(String(dt.tags?.BPS)) || 0
         ),
+        duration:
+          String(Number(dt.duration) || "")?.trim() ||
+          String(dt.tags?.DURATION || "")?.trim(),
       }))
       .filter((dt) => dt.adaptedResolution?.height);
     // @ts-ignore
@@ -35,6 +38,9 @@ ffmpeg.ffprobe(inputFile, (err, data: FfMetaData) => {
       .map((dt) => ({
         ...dt,
         language: dt.tags?.language?.trim() || dt.language,
+        duration:
+          String(Number(dt.duration) || "")?.trim() ||
+          String(dt.tags?.DURATION || "")?.trim(),
       }))
       .filter((dt) => dt.codec_type === "audio");
     // @ts-ignore
@@ -42,6 +48,9 @@ ffmpeg.ffprobe(inputFile, (err, data: FfMetaData) => {
       .map((dt) => ({
         ...dt,
         language: dt.tags?.language?.trim() || dt.language,
+        duration:
+          String(Number(dt.duration) || "")?.trim() ||
+          String(dt.tags?.DURATION || "")?.trim(),
       }))
       .filter((dt) => dt.codec_type === "subtitle");
 
