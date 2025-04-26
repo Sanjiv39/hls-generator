@@ -109,10 +109,9 @@ const processVideo = async (
     console.log("Found", video.resolution, video.bitrates);
 
     const totalDuration =
-      (moment.duration(video.duration).isValid() &&
-        moment.duration(video.duration).asSeconds()) ||
-      0;
-    const progressBar = new ProgressBar({
+      ProgressBar.validateTimestamp(video.duration || "")?.parsedTimestamp ||
+      "00:00:00";
+    const progressBar = new ProgressBar(totalDuration, {
       format:
         "Progress |" +
         "{bar}" +
@@ -124,7 +123,7 @@ const processVideo = async (
       hideCursor: true,
       barsize: 80,
     });
-    progressBar.bar?.start(totalDuration, 0);
+    progressBar.start();
 
     const resolutions = Object.entries(video.bitrates)
       .filter(
@@ -225,10 +224,7 @@ const processVideo = async (
           //     progress.targetSize
           //   }, timestamp = ${progress.timemark}`
           // );
-          if (moment.duration(progress.timemark).isValid()) {
-            const percent = moment.duration(progress.timemark).asSeconds();
-            progressBar.updater(percent);
-          }
+          progressBar.update(progress.timemark);
         })
         .on("end", () => {
           console.log("✅ Done generating video chunks!");
@@ -277,6 +273,27 @@ const processAudio = async (
     if (!audios.length) {
       throw new Error("No valid audios");
     }
+
+    const totalDuration =
+      ProgressBar.validateTimestamp(
+        // @ts-ignore
+        audios
+          .filter((dt) => Number(dt.duration))
+          .sort((a, b) => Number(b.duration) - Number(a.duration))[0]?.duration
+      )?.parsedTimestamp || "00:00:00";
+    const progressBar = new ProgressBar(totalDuration, {
+      format:
+        "Progress |" +
+        "{bar}" +
+        `| {percentage}% | ETA: {eta}s || {value}/{total} secs`,
+      barCompleteChar: "\u2588",
+      barIncompleteChar: "\u2591",
+      barCompleteString: "✅",
+      barIncompleteString: "🔃",
+      hideCursor: true,
+      barsize: 80,
+    });
+    progressBar.start();
 
     const outputOptions = Object.entries(options)
       .filter((dt) => dt[1] && dt[0])
@@ -348,15 +365,16 @@ const processAudio = async (
           appendFileSync("./command.sh", commandLine);
         })
         .on("progress", (progress) => {
-          console.log(
-            `Audio process progress => ${
-              progress.percent?.toFixed(2) || 0
-            }%, frames = ${progress.frames}, speed = ${
-              progress.currentKbps || 0
-            }kbps - ${progress.currentFps || 0}fps, target = ${
-              progress.targetSize
-            }, timestamp = ${progress.timemark}`
-          );
+          // console.log(
+          //   `Audio process progress => ${
+          //     progress.percent?.toFixed(2) || 0
+          //   }%, frames = ${progress.frames}, speed = ${
+          //     progress.currentKbps || 0
+          //   }kbps - ${progress.currentFps || 0}fps, target = ${
+          //     progress.targetSize
+          //   }, timestamp = ${progress.timemark}`
+          // );
+          progressBar.update(progress.timemark);
         })
         .on("end", () => {
           console.log("✅ Done generating audio chunks!");
@@ -483,10 +501,7 @@ const processSubtitles = async (
               //     progress.timemark
               //   }`
               // );
-              if (moment.duration(progress.timemark).isValid()) {
-                const percent = moment.duration(progress.timemark).asSeconds();
-                progressBar.update(percent);
-              }
+              progressBar.update(progress.timemark);
             })
             .on("end", () => {
               console.log("✅ Generated subtitle", name);

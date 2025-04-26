@@ -38,6 +38,13 @@ export class ProgressBar {
       if (!match) {
         throw new Error("Timestamp must be something like hh:mm:ss.S");
       }
+      const arr = match[0].split(":").map((s) => s.padStart(2, "0"));
+      if (arr.length < 3) {
+        arr.fill("00", 0, 3 - arr.length);
+      }
+      data.parsedTimestamp = arr.join(":");
+      data.valid = true;
+      return data;
     } catch (err) {
       return data;
     }
@@ -56,11 +63,13 @@ export class ProgressBar {
       secs: 0,
     };
     try {
-      if (typeof timestamp === "string" && timestamp.match(/^\d{1.2}$/)) {
-        if (moment.duration(timestamp).isValid()) {
-          this.params.totalTimestamp = timestamp;
+      if (typeof timestamp === "string") {
+        timestamp = timestamp.trim();
+        const parsed = ProgressBar.validateTimestamp(timestamp);
+        if (moment.duration(timestamp).isValid() && parsed.parsedTimestamp) {
+          this.params.totalTimestamp = parsed.parsedTimestamp;
           this.params.totalTime = moment.duration(timestamp).asSeconds();
-          template.stamp = timestamp;
+          template.stamp = this.params.totalTimestamp;
           template.secs = this.params.totalTime;
           return template;
         }
@@ -163,12 +172,20 @@ export class ProgressBar {
     }
   };
 
-  update = (progress: number) => {
-    if (this.timer) {
-      clearTimeout(this.timer);
+  update = (progress: string | number) => {
+    try {
+      if (this.timer) {
+        clearTimeout(this.timer);
+      }
+      const data = this.getValidTimestamp(progress);
+      if (!data?.secs) {
+        throw new Error("Error parsing timestamp");
+      }
+      this.bar?.update(data.secs);
+      // this.timer = setTimeout(() => {
+      // }, 10);
+    } catch (err) {
+      console.error("Error updating progress :", err);
     }
-    this.bar?.update(progress);
-    // this.timer = setTimeout(() => {
-    // }, 10);
   };
 }
