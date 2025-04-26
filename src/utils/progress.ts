@@ -38,9 +38,12 @@ export class ProgressBar {
       if (!match) {
         throw new Error("Timestamp must be something like hh:mm:ss.S");
       }
-      const arr = match[0].split(":").map((s) => s.padStart(2, "0"));
+      let arr = match[0].split(":").map((s) => s.padStart(2, "0"));
       if (arr.length < 3) {
-        arr.fill("00", 0, 3 - arr.length);
+        arr = Array(3 - arr.length)
+          .fill("00")
+          .concat(arr);
+        // arr = arr.fill("00", 0, 3 - arr.length);
       }
       data.parsedTimestamp = arr.join(":");
       data.valid = true;
@@ -67,17 +70,13 @@ export class ProgressBar {
         timestamp = timestamp.trim();
         const parsed = ProgressBar.validateTimestamp(timestamp);
         if (moment.duration(timestamp).isValid() && parsed.parsedTimestamp) {
-          this.params.totalTimestamp = parsed.parsedTimestamp;
-          this.params.totalTime = moment.duration(timestamp).asSeconds();
-          template.stamp = this.params.totalTimestamp;
-          template.secs = this.params.totalTime;
+          template.stamp = parsed.parsedTimestamp;
+          template.secs = moment.duration(timestamp).asSeconds();
           return template;
         }
         if (options?.defaultizeIfInvalid) {
-          this.params.totalTimestamp = zeroTimeStamp;
-          this.params.totalTime = 0;
-          template.stamp = this.params.totalTimestamp;
-          template.secs = this.params.totalTime;
+          template.stamp = zeroTimeStamp;
+          template.secs = 0;
           return template;
         }
       }
@@ -94,7 +93,7 @@ export class ProgressBar {
           }).isValid
         ) {
           const duration = moment.duration(timestamp, "seconds");
-          this.params.totalTimestamp = `${duration
+          template.stamp = `${duration
             .hours()
             .toString()
             .padStart(2, "0")}:${duration
@@ -104,16 +103,12 @@ export class ProgressBar {
             .seconds()
             .toString()
             .padStart(2, "0")}`;
-          this.params.totalTime = moment.duration(timestamp).asSeconds();
-          template.stamp = this.params.totalTimestamp;
-          template.secs = this.params.totalTime;
+          template.secs = moment.duration(timestamp).asSeconds();
           return template;
         }
         if (options?.defaultizeIfInvalid) {
-          this.params.totalTimestamp = zeroTimeStamp;
-          this.params.totalTime = 0;
-          template.stamp = this.params.totalTimestamp;
-          template.secs = this.params.totalTime;
+          template.stamp = zeroTimeStamp;
+          template.secs = 0;
         }
         return template;
       }
@@ -163,6 +158,7 @@ export class ProgressBar {
       const startTime = this.getValidTimestamp(startValue, {
         defaultizeIfInvalid: true,
       });
+      // console.log(startTime, this.params);
       if (!startTime) {
         throw new Error("Parsing start time failed");
       }
@@ -189,3 +185,5 @@ export class ProgressBar {
     }
   };
 }
+
+// console.log(ProgressBar.validateTimestamp(""));
