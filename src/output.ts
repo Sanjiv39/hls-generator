@@ -318,10 +318,7 @@ const processAudio = async (
                 "-var_stream_map",
                 `a:0,name:${name}`,
                 `-master_pl_name`,
-                `${
-                  config.hlsMasterFile?.trim()?.match(/(.| )+[.]m3u8/)?.[0] ||
-                  "master.m3u8"
-                }`,
+                `${name}/${config.hlsMasterFile?.trim() || "master"}.m3u8`,
                 // bitrate
                 "-b:a",
                 `${Math.round(
