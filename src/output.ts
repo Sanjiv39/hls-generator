@@ -265,7 +265,7 @@ const processAudio = async (
     );
 
     const aCodec = getValidAudioCodec(config.audioCodec);
-    const userAMappings: Exclude<
+    const userMappings: Exclude<
       Config<Device>["audioMappings"],
       null | undefined | false
     > = Array.isArray(config.audioMappings) ? config.audioMappings : [];
@@ -274,114 +274,111 @@ const processAudio = async (
       throw new Error("No valid audios");
     }
 
-    const totalDuration =
-      ProgressBar.validateTimestamp(
-        // @ts-ignore
-        audios
-          .filter((dt) => Number(dt.duration))
-          .sort((a, b) => Number(b.duration) - Number(a.duration))[0]?.duration
-      )?.parsedTimestamp || "00:00:00";
-    const progressBar = new ProgressBar(totalDuration, {
-      format:
-        "Progress |" +
-        "{bar}" +
-        `| {percentage}% | ETA: {eta}s || {value}/{total} secs`,
-      barCompleteChar: "\u2588",
-      barIncompleteChar: "\u2591",
-      barCompleteString: "✅",
-      barIncompleteString: "🔃",
-      hideCursor: true,
-      barsize: 80,
-    });
-    progressBar.start();
-
     const outputOptions = Object.entries(options)
       .filter((dt) => dt[1] && dt[0])
-      .map((dt) => `-${dt[0]} ${String(dt[1]).trim()}`)
-      .concat([
-        // mappings
-        ...audios.map((dt) => `-map 0:${dt.index}`),
-        "-f",
-        "hls",
-        `-hls_time`,
-        `${hlsTime}`,
-        `-hls_playlist_type`,
-        `vod`,
-        // codecs
-        ...audios
-          .map((dt, i) => [
-            `-c:a:${i}`,
-            `${userAMappings[i]?.codec?.trim().toLowerCase() || aCodec}`,
-          ])
-          .flatMap((dt) => dt),
-        // mapping definitions
-        "-var_stream_map",
-        `${audios
-          .map(
-            (dt, i) =>
-              `a:${i},name:${
-                userAMappings[i]?.name?.trim() || `audio_${i + 1}`
+      .map((dt) => `-${dt[0]} ${String(dt[1]).trim()}`);
+
+    const audioPr = async (audio: (typeof audios)[number], i: number) => {
+      try {
+        const runner = Ffmpeg();
+        const name = userMappings[i]?.name || `audio-${i + 1}`;
+        const totalDuration =
+          ProgressBar.validateTimestamp(audio.duration || "")
+            ?.parsedTimestamp || "00:00:00";
+        const progressBar = new ProgressBar(totalDuration, {
+          format:
+            "Progress |" +
+            "{bar}" +
+            `| {percentage}% | ETA: {eta}s || {value}/{total} secs`,
+          barCompleteChar: "\u2588",
+          barIncompleteChar: "\u2591",
+          barCompleteString: "✅",
+          barIncompleteString: "🔃",
+          hideCursor: true,
+          barsize: 80,
+        });
+        progressBar.start();
+        await new Promise<boolean>((res, rej) => {
+          runner
+            .input(inputFile)
+            .outputOptions(
+              outputOptions.concat([
+                `-map`,
+                `0:${audio.index}`,
+                // format to hls
+                "-f",
+                "hls",
+                `-hls_time`,
+                `${hlsTime}`,
+                `-hls_playlist_type`,
+                `vod`,
+                // codec
+                "-c:a",
+                userMappings[i]?.codec || aCodec,
+                "-var_stream_map",
+                `a:0,name:${name}`,
+                `-master_pl_name`,
+                `${
+                  config.hlsMasterFile?.trim()?.match(/(.| )+[.]m3u8/)?.[0] ||
+                  "master.m3u8"
+                }`,
+                // bitrate
+                "-b:a",
+                `${Math.round(
+                  convertBitsToUnit(
+                    Number(userMappings[i]?.bitrate || audio.bit_rate),
+                    "k"
+                  )?.metric || 128
+                )}k`,
+                // segment
+                `-hls_segment_filename`,
+                `${outputFolder}/audio/%v/${
+                  config.audioSegment || config.segment || "segment%d.ts"
+                }`,
+              ])
+            )
+            .output(
+              `${outputFolder}/audio/%v/${
+                config.audioSingleM3u8?.trim()?.match(/(.| )+[.]m3u8/)?.[0] ||
+                "index.m3u8"
               }`
-          )
-          .join(" ")}`,
-        `-master_pl_name`,
-        `${
-          config.hlsMasterFile?.trim()?.match(/(.| )+[.]m3u8/)?.[0] ||
-          "master.m3u8"
-        }`,
-        // bitrates
-        ...audios
-          .map((dt, i) => [
-            `-b:a:${i}`,
-            `${Math.round(
-              convertBitsToUnit(
-                (userAMappings[i]?.bitrate || dt.bit_rate) as number,
-                "k"
-              )?.metric || 128
-            )}k`,
-          ])
-          .flatMap((dt) => dt),
-        `-hls_segment_filename`,
-        `${outputFolder}/audio/%v/${
-          config.audioSegment || config.segment || "segment%d.ts"
-        }`,
-      ]);
-    await new Promise<boolean>((res, rej) => {
-      ffmpegInput
-        .inputOptions(
-          Object.entries(inputOptions)
-            .filter((dt) => dt[1] && dt[0])
-            .map((dt) => `-${dt[0]} ${String(dt[1]).trim()}`)
-        )
-        .outputOptions(outputOptions)
-        .output(
-          `${outputFolder}/audio/%v/${
-            config.audioSingleM3u8?.trim()?.match(/(.| )+[.]m3u8/)?.[0] ||
-            "index.m3u8"
-          }`
-        )
-        .on("start", (commandLine) => {
-          console.log("Audio processing started...............");
-          console.log("FFmpeg command:", commandLine);
-          appendFileSync(
-            "./command.sh",
-            "\n\nAudio" + Array(50).fill("-").join("") + "\n"
-          );
-          appendFileSync("./command.sh", commandLine);
-        })
-        .on("progress", (progress) => {
-          progressBar.update(progress.timemark);
-        })
-        .on("end", () => {
-          console.log("✅ Done generating audio chunks!");
-          res(true);
-        })
-        .on("error", (err) => {
-          console.error("❌ FFmpeg Error:", err.message);
-          rej(err);
-        })
-        .run();
-    });
+            );
+          runner
+            .on("start", (commandLine) => {
+              console.log("Name :", name);
+              chalkAnimation.glitch("Processing...............").start();
+              console.log("FFmpeg command:", commandLine);
+              appendFileSync(
+                "./command.sh",
+                "\n\nAudio" + Array(50).fill("-").join("") + "\n"
+              );
+              appendFileSync("./command.sh", commandLine);
+            })
+            .on("progress", (progress) => {
+              progressBar.update(progress.timemark);
+            })
+            .on("end", () => {
+              console.log("✅ Generated audio", name);
+              progressBar.bar?.stop();
+              res(true);
+            })
+            .on("error", (err) => {
+              console.error("❌ FFmpeg Error:", err.message);
+              rej(err);
+            })
+            .run();
+        });
+      } catch (err) {
+        console.log("Error audio :", err);
+      }
+    };
+
+    console.log("Starting to process audios.....................");
+    for (let i = 0; i < audios.length; i++) {
+      const data = audios[i];
+      await audioPr(data, i);
+    }
+    console.log("✅ Finished processing audios.....................");
   } catch (err) {
     console.log("Error processing audio :", err);
   }
