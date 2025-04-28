@@ -22,6 +22,8 @@ const inputFile = config.inputAbsolute
   ? config.input || ""
   : path.join(import.meta.dirname, config.input || "");
 
+const progressBar = new ProgressBar();
+
 export const main = async () => {
   try {
     await new Promise<boolean>((res, rej) =>
@@ -41,10 +43,11 @@ export const main = async () => {
               Number(String(dt.height)),
               Number(String(dt.bit_rate)) || Number(String(dt.tags?.BPS)) || 0
             ),
-            duration:
-              String(duration) ||
-              String(Number(dt.duration) || "")?.trim() ||
-              String(dt.tags?.DURATION || "")?.trim(),
+            duration: progressBar.getValidTimestampFromMultiple([
+              dt.duration || "",
+              dt.tags?.DURATION || "",
+              "",
+            ])?.stamp,
           }))
           .filter((dt) => dt.adaptedResolution?.height);
         // @ts-ignore
@@ -52,10 +55,11 @@ export const main = async () => {
           .map((dt) => ({
             ...dt,
             language: dt.tags?.language?.trim() || dt.language,
-            duration:
-              String(duration) ||
-              String(Number(dt.duration) || "")?.trim() ||
-              String(dt.tags?.DURATION || "")?.trim(),
+            duration: progressBar.getValidTimestampFromMultiple([
+              dt.duration || "",
+              dt.tags?.DURATION || "",
+              "",
+            ])?.stamp,
           }))
           .filter((dt) => dt.codec_type === "audio");
         // @ts-ignore
@@ -63,10 +67,11 @@ export const main = async () => {
           .map((dt) => ({
             ...dt,
             language: dt.tags?.language?.trim() || dt.language,
-            duration:
-              String(duration) ||
-              String(Number(dt.duration) || "")?.trim() ||
-              String(dt.tags?.DURATION || "")?.trim(),
+            duration: progressBar.getValidTimestampFromMultiple([
+              dt.duration || "",
+              dt.tags?.DURATION || "",
+              "",
+            ])?.stamp,
           }))
           .filter((dt) => dt.codec_type === "subtitle");
 
@@ -81,7 +86,7 @@ export const main = async () => {
         console.log("Saved metadata. Found", counts);
         console.log(
           "Duration :",
-          new ProgressBar().getValidTimestamp(duration, {
+          progressBar.getValidTimestamp(duration, {
             defaultizeIfInvalid: true,
           })?.stamp
         );
@@ -112,12 +117,14 @@ export const main = async () => {
           data.audios?.map((dt) => ({
             channels: dt.channels,
             language: dt.language || dt.tags?.language,
+            duration: dt.duration,
           }))
         );
         console.log(
           "Subtitles: ",
           data.subtitles?.map((dt) => ({
             language: dt.language || dt.tags?.language,
+            duration: dt.duration,
           }))
         );
         res(true);

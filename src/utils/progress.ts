@@ -68,6 +68,7 @@ export class ProgressBar {
     try {
       if (typeof timestamp === "string") {
         timestamp = timestamp.trim();
+        // If number only - then parse as direct seconds
         if (
           validateNumber<{ isValid: boolean; value: number }>(
             Number(timestamp),
@@ -98,7 +99,8 @@ export class ProgressBar {
           return template;
         }
         const parsed = ProgressBar.validateTimestamp(timestamp);
-        if (moment.duration(timestamp).isValid() && parsed.parsedTimestamp) {
+        // Valid timestamp string
+        if (parsed.valid && parsed.parsedTimestamp) {
           template.stamp = parsed.parsedTimestamp;
           template.secs = moment.duration(timestamp).asSeconds();
           return template;
@@ -109,6 +111,7 @@ export class ProgressBar {
           return template;
         }
       }
+      // Timestamp is seconds
       if (typeof timestamp === "number") {
         if (
           validateNumber<{ isValid: boolean; value: number }>(timestamp, {
@@ -146,6 +149,31 @@ export class ProgressBar {
       );
     } catch (err) {
       console.error("Error getting timestamp :", err);
+      return null;
+    }
+  };
+
+  getValidTimestampFromMultiple = (
+    timestamps: (string | number)[],
+    options?: Partial<{ defaultizeIfInvalid: boolean }>
+  ) => {
+    try {
+      if (
+        !Array.isArray(timestamps) ||
+        !timestamps.every((t) => typeof t === "string" || typeof t === "number")
+      ) {
+        throw new Error("Required array of each either string or number");
+      }
+      for (let i = 0; i < timestamps.length; i++) {
+        const stamp = timestamps[i];
+        const data = this.getValidTimestamp(stamp, options);
+        if (data) {
+          return data;
+        }
+      }
+      throw new Error("No valid timestamp received");
+    } catch (err) {
+      console.error("Error getting any valid timestamp :", err);
       return null;
     }
   };
