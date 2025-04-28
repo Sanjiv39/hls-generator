@@ -4,10 +4,6 @@
   "description": "Generates HLS files with ffmpeg",
   "main": "index.js",
   "type": "module",
-  "directories": {
-    "test": "test",
-    "dev": "ts-node src/index.ts"
-  },
   "scripts": {
     "test": "node --loader ts-node/esm",
     "build": "npx tsc",
