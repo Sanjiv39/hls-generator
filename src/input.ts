@@ -32,7 +32,8 @@ export const main = async () => {
           rej(err);
           return;
         }
-        const duration = data.format.duration || 0;
+        const duration =
+          (config.useGeneralDuration && data.format.duration) || NaN;
         // @ts-ignore
         data.videos = data.streams
           .filter((dt) => dt.codec_type === "video")
@@ -44,6 +45,7 @@ export const main = async () => {
               Number(String(dt.bit_rate)) || Number(String(dt.tags?.BPS)) || 0
             ),
             duration: progressBar.getValidTimestampFromMultiple([
+              duration,
               dt.duration || "",
               dt.tags?.DURATION || "",
               "",
@@ -56,6 +58,7 @@ export const main = async () => {
             ...dt,
             language: dt.tags?.language?.trim() || dt.language,
             duration: progressBar.getValidTimestampFromMultiple([
+              duration,
               dt.duration || "",
               dt.tags?.DURATION || "",
               "",
@@ -68,6 +71,7 @@ export const main = async () => {
             ...dt,
             language: dt.tags?.language?.trim() || dt.language,
             duration: progressBar.getValidTimestampFromMultiple([
+              duration,
               dt.duration || "",
               dt.tags?.DURATION || "",
               "",
