@@ -1,5 +1,6 @@
 import { FfprobeStream, FfprobeData } from "fluent-ffmpeg";
 import { Config, Device, Presets } from "../types/config-types.js";
+import { calculateAllBitrates } from "../utils/bitrate.js";
 
 export type FfmpegTags = Partial<{
   language: string;
@@ -20,7 +21,10 @@ export type FfMetaData = {
     ? FfProbeStreamTagged[]
     : FfprobeData[K];
 } & Partial<{
-  videos: (FfProbeStreamTagged & { codec_type: "video" })[];
+  videos: (FfProbeStreamTagged & {
+    codec_type: "video";
+    resolutions: ReturnType<typeof calculateAllBitrates>;
+  })[];
   audios: (FfProbeStreamTagged & { codec_type: "audio"; language?: string })[];
   subtitles: (FfProbeStreamTagged & {
     codec_type: "subtitle";

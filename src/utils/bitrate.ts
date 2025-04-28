@@ -47,14 +47,14 @@ export function calculateAllBitrates(
       );
     }
 
-    console.log(
-      "Max bitrate : ",
-      bitrate,
-      "for",
-      resolution.width,
-      "x",
-      resolution.height
-    );
+    // console.log(
+    //   "Max bitrate : ",
+    //   bitrate,
+    //   "for",
+    //   resolution.width,
+    //   "x",
+    //   resolution.height
+    // );
 
     for (let res in resolutionPixels) {
       if (

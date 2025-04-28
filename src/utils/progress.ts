@@ -68,6 +68,35 @@ export class ProgressBar {
     try {
       if (typeof timestamp === "string") {
         timestamp = timestamp.trim();
+        if (
+          validateNumber<{ isValid: boolean; value: number }>(
+            Number(timestamp),
+            {
+              validateCountable: false,
+              customValidation: (val) => {
+                if (val >= 0) {
+                  return { isValid: true, value: val };
+                }
+                return { isValid: false, value: val };
+              },
+            }
+          ).isValid
+        ) {
+          timestamp = Number(timestamp);
+          const duration = moment.duration(timestamp, "seconds");
+          template.stamp = `${duration
+            .hours()
+            .toString()
+            .padStart(2, "0")}:${duration
+            .minutes()
+            .toString()
+            .padStart(2, "0")}:${duration
+            .seconds()
+            .toString()
+            .padStart(2, "0")}`;
+          template.secs = moment.duration(timestamp).asSeconds();
+          return template;
+        }
         const parsed = ProgressBar.validateTimestamp(timestamp);
         if (moment.duration(timestamp).isValid() && parsed.parsedTimestamp) {
           template.stamp = parsed.parsedTimestamp;

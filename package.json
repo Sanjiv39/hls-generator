@@ -7,15 +7,14 @@
   "scripts": {
     "test": "node --loader ts-node/esm",
     "build": "npx tsc",
-    "input": "node dist/input.js",
-    "output": "node dist/output.js",
-    "output-genMeta": "node dist/output.js --genMeta true",
+    "input": "node dist/input.js -- --genMeta",
+    "output": "node dist/output.js -- ",
+    "output-genMeta": "node dist/output.js -- --genMeta true",
     "dev": "nodemon src/index.ts",
     "dev-test": "nodemon -- ",
-    "dev-input": "nodemon src/input.ts",
-    "dev-output": "nodemon src/output.ts",
-    "dev-output-genMeta": "nodemon src/output.ts --genMeta true",
-    "get-metadata": "npm run build && node dist/index.js"
+    "dev-input": "nodemon src/input.ts -- --genMeta",
+    "dev-output": "nodemon src/output.ts -- ",
+    "dev-output-genMeta": "nodemon src/output.ts --genMeta true"
   },
   "author": "Sanjiv39",
   "license": "MIT",

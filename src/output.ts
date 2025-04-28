@@ -9,6 +9,7 @@ import { appendFileSync, existsSync, mkdirSync, writeFileSync } from "fs";
 import { v7 } from "uuid";
 import chalkAnimation from "chalk-animation";
 import moment from "moment";
+import { main as generateMetadata } from "./input.js";
 // utils
 import { getFittedResolution, calculateAllBitrates } from "./utils/bitrate.js";
 import { getValidPreset } from "./utils/presets.js";
@@ -25,10 +26,10 @@ import { Device, Config } from "./types/config-types.js";
 // data
 // @ts-ignore
 const args = argsToObject<{ genMeta: boolean }>(process.argv);
-console.log(args);
+console.log(args, process.argv);
 
-if (args?.genMeta) {
-  await import("./input.js");
+if (Object.hasOwn({ ...args }, "genMeta")) {
+  await generateMetadata();
 }
 
 let fileMetaData = await (async () => {
@@ -54,7 +55,7 @@ if (!config) {
 }
 if (!metadata) {
   throw new Error(
-    "Metadata not found. Please first generate by executing \n1.[npm run input] \n2. or with auto generating metadata [npm run output-genMeta] \n3. or use flag --genMeta with value true\n************\n"
+    "Metadata not found. Please first generate by executing \n1.[npm run input] \n2. or with auto generating metadata [npm run output-genMeta] \n3. or use flag --genMeta\n************\n"
   );
 }
 
