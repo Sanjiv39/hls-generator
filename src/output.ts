@@ -34,7 +34,8 @@ const uuid = v7();
 const inputFile =
   (config.inputAbsolute
     ? config.input
-    : path.join(import.meta.dirname, config.input || "")) || "";
+    : path.join(import.meta.dirname, config.input || "")
+  ).replace("\\", "/") || "";
 const outputFolder = path
   .join(
     config.outputAbsolute ? "" : "out",
@@ -48,6 +49,10 @@ const outputFolder = path
       ""
   )
   .replace("\\", "/");
+
+if (!existsSync(`out`)) {
+  mkdirSync(`out`, { recursive: true });
+}
 
 console.log("Input :", inputFile);
 console.log("Output :", outputFolder);

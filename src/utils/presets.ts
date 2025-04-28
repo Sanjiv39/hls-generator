@@ -3,7 +3,7 @@ import {
   Device,
   IntelPresets,
   NvidiaPresets,
-} from "../../types/config-types.js";
+} from "../types/config-types.js";
 
 // @ts-ignore
 export const nvidiaPresets: NvidiaPresets[] = Array(7)
