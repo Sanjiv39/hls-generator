@@ -111,6 +111,8 @@ const processVideo = async (
     const totalDuration =
       ProgressBar.validateTimestamp(video.duration || "")?.parsedTimestamp ||
       "00:00:00";
+
+    console.log("Video duration :", totalDuration);
     const progressBar = new ProgressBar(totalDuration, {
       format:
         "Progress |" +

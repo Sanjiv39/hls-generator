@@ -49,6 +49,7 @@ export class ProgressBar {
       data.valid = true;
       return data;
     } catch (err) {
+      console.error("Error validating timestamp :", err);
       return data;
     }
   };
@@ -174,7 +175,7 @@ export class ProgressBar {
         clearTimeout(this.timer);
       }
       const data = this.getValidTimestamp(progress);
-      if (!data?.secs) {
+      if (!data?.stamp) {
         throw new Error("Error parsing timestamp");
       }
       this.bar?.update(data.secs);
