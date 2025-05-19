@@ -1,7 +1,0 @@
-# Video -----------------------------------------------
-
-ffmpeg  -i "D:/Turning Rajasthan into a set   Proud to be the line producer for @mahindrarise in Rajasthan. #Rajasthan #Mahindra #LambFriday  ...@shekhawatpadam @harshvardhann_s16 ...#locationsbylambfriday #filmproduction #adshoot #rajasthan #lambfriday #.mp4" -y -threads "10" -f hls -hls_time 10 -hls_playlist_type vod -map 0:0 -map 0:0 -c:v:0 h264_qsv -c:v:1 h264_qsv -var_stream_map "v:0,name:360p v:1,name:240p" -master_pl_name "master.m3u8" -s:v:0 640x360 -s:v:1 426x240 -b:v:0 182k -b:v:1 81k -hls_segment_filename "out/turning-rajasthan/video/%v/segment%d.ts" "out/turning-rajasthan/video/%v/index.m3u8"
-
-# Audio -----------------------------------------------
-
-ffmpeg  -i "D:/Turning Rajasthan into a set   Proud to be the line producer for @mahindrarise in Rajasthan. #Rajasthan #Mahindra #LambFriday  ...@shekhawatpadam @harshvardhann_s16 ...#locationsbylambfriday #filmproduction #adshoot #rajasthan #lambfriday #.mp4" -y -threads 10 -map 0:1 -f hls -hls_time 10 -hls_playlist_type vod -c:a aac -var_stream_map "a:0,name:audio-1" -master_pl_name "audio-1/master.m3u8" -b:a 79k -hls_segment_filename "out/turning-rajasthan/audio/%v/segment%d.ts" "out/turning-rajasthan/audio/%v/index.m3u8"
