@@ -100,10 +100,7 @@ export const createMasterPl = async (
     audioMedia += audios
       .map((dt, i) => {
         try {
-          const file =
-            dt.uri
-              .split("/")
-              .reverse()[1] || "";
+          const file = dt.uri.split("/").reverse()[1] || "";
           const lang = getLanguage(file);
           const name = (lang?.language || file).trim().replace(/[-_]/g, " ");
 
@@ -128,10 +125,7 @@ export const createMasterPl = async (
     subMedia += subtitles
       .map((dt, i) => {
         try {
-          const file =
-            dt.uri
-              .split("/")
-              .reverse()[1] || "";
+          const file = dt.uri.split("/").reverse()[1] || "";
           const lang = getLanguage(file);
           const name = (lang?.language || file).trim().replace(/[-_]/g, " ");
 
@@ -240,11 +234,11 @@ export const parseHLSStreams = async (
       parser.push(str);
       parser.end();
       // console.log(
-      //   parser.manifest,
-      //   parser.manifest.playlists?.map((dt) => dt.attributes)
+      //   videoStreams.length,
+      //   parser.manifest.playlists?.length
       // );
       if (parser.manifest.playlists?.length !== videoStreams.length) {
-        return;
+        throw new Error("Parsing video manifests failed");
       }
       segments.allowCache = parser.manifest.allowCache === true;
       segments.version = Number(String(parser.manifest.version)) || undefined;
@@ -301,11 +295,11 @@ export const parseHLSStreams = async (
 };
 
 // Test
-const dir = "./out/turning-rajasthan";
-const data = await parseHLSStreams({
-  dir: dir,
-  videoMaster: "master.m3u8",
-  audioIndexes: ["audio-1/index.m3u8"],
-  subtitles: ["sub-1"],
-});
-data && createMasterPl(dir, data);
+// const dir = "./out/turning-rajasthan";
+// const data = await parseHLSStreams({
+//   dir: dir,
+//   videoMaster: "master.m3u8",
+//   audioIndexes: ["audio-1/index.m3u8"],
+//   subtitles: ["sub-1"],
+// });
+// data && createMasterPl(dir, data);

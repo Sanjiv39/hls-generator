@@ -19,11 +19,12 @@ import moment from "moment";
 // import { main as generateMetadata } from "./input.js";
 // utils
 import { processFfmpegCmd } from "./utils/spawn.js";
+import { createMasterPl, parseHLSStreams } from "./m3u.js";
+import { ProgressBar } from "./utils/progress.js";
 import { getFittedResolution, calculateAllBitrates } from "./utils/bitrate.js";
 import { getValidPreset } from "./utils/presets.js";
 import { getValidAccelerator } from "./utils/accelerator.js";
 import { getValidAudioCodec, getValidVideoCodec } from "./utils/codecs.js";
-import { ProgressBar } from "./utils/progress.js";
 import { convertBitsToUnit } from "./utils/bits.js";
 import { validateNumber } from "./utils/number.js";
 import { argsToObject } from "./utils/args.js";
@@ -606,6 +607,15 @@ const generateOutput = async () => {
 
     console.log("\n\nFile mappings :", data);
     console.log("\n\n");
+
+    const parsedHlsData = await parseHLSStreams({
+      videoMaster: data.videoMasterFile,
+      audioIndexes: data.audioIndexFiles,
+      subtitles: data.subtitleFiles,
+      dir: outputFolder,
+    });
+    console.log(parsedHlsData);
+    parsedHlsData && (await createMasterPl(outputFolder, parsedHlsData));
 
     chalkAnimation
       .karaoke("E N D 🔚🔚🔚🔚🔚🔚🔚🔚🔚🔚🔚🔚🔚🔚🔚🔚🔚🔚🔚🔚🔚🔚🔚")
