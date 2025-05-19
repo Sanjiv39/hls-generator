@@ -6,11 +6,17 @@ import Ffmpeg, {
 } from "fluent-ffmpeg";
 import ffmpeg from "ffmpeg";
 import path from "path";
-import { appendFileSync, existsSync, mkdirSync, writeFileSync } from "fs";
+import {
+  appendFileSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  writeFileSync,
+} from "fs";
 import { v7 } from "uuid";
 import chalkAnimation from "chalk-animation";
 import moment from "moment";
-import { main as generateMetadata } from "./input.js";
+// import { main as generateMetadata } from "./input.js";
 // utils
 import { processFfmpegCmd } from "./utils/spawn.js";
 import { getFittedResolution, calculateAllBitrates } from "./utils/bitrate.js";
@@ -26,6 +32,10 @@ import { getConfig } from "./utils/config.js";
 import { FfMetaData, FfOptions } from "./types/ffmpeg.js";
 import { Device, Config } from "./types/config-types.js";
 // import moment from "moment";
+
+const fileMetaData = await import("../metadata.json", {
+  assert: { type: "json" },
+});
 // @ts-ignore
 let metadata: FfMetaData | undefined = fileMetaData?.default;
 const config = await getConfig();
@@ -68,10 +78,6 @@ const outputFolder = path
       ""
   )
   .replace("\\", "/");
-
-if (!existsSync(`out`)) {
-  mkdirSync(`out`, { recursive: true });
-}
 
 console.log("Input :", inputFile);
 console.log("Output :", outputFolder);
@@ -433,6 +439,11 @@ const processSubtitles = async (
         codec,
       ]);
 
+    // Subtitle index.m3u8 template
+    const template = readFileSync("./templates/subtitle-index.m3u8", {
+      encoding: "utf-8",
+    });
+
     const subtitlePr = async (
       subtitleData: (typeof subtitles)[number],
       i: number
@@ -467,9 +478,18 @@ const processSubtitles = async (
             ),
           ]);
         const oOpts = [`-map`, `0:${subtitleData.index}`, "-c:s", codec];
-        const out = `"${outputFolder}/subs/${name}.vtt"`;
+        const out = `"${outputFolder}/subs/${name}/segment.vtt"`;
 
         await processFfmpegCmd(inputFile, out, iOpts, oOpts, progressBar);
+
+        const indexM3u8 = template
+          .replaceAll(
+            "{{duration}}",
+            `${Number(String(options.hlsChunkTime)) || 0}`
+          )
+          .replaceAll("{{file}}", `segment.vtt`);
+        writeFileSync(`${outputFolder}/subs/${name}/index.m3u8`, indexM3u8);
+
         return `${name}.vtt`;
       } catch (err) {
         console.log("Error subtitle :", err);
