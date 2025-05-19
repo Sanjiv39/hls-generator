@@ -93,7 +93,7 @@ export const createMasterPl = async (
       parsedData.version || 3
     }\n#EXT-X-ALLOW-CACHE:${
       (parsedData.allowCache && "YES") || "NO"
-    }\n\n${comment}\n\n`;
+    }\n\n${comment}\n`;
 
     // Audio
     let audioMedia = `# Audios\n`;
@@ -168,7 +168,7 @@ export const createMasterPl = async (
     );
 
     const arr = [tags, audioMedia, subMedia, videoMedia];
-    const str = arr.filter((s) => s.trim()).join("\n");
+    const str = arr.filter((s) => s.trim()).join("\n\n");
     // console.log(arr);
 
     writeFileSync(`${dir}/master.m3u8`, str);

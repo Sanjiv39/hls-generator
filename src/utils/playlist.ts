@@ -19,19 +19,18 @@ export const getAudioMediaStr = (data: AudioMedia) => {
     }",DEFAULT=${(data.default && "YES") || "NO"},AUTOSELECT=${
       (data.autoSelect && "YES") || "NO"
     },LANGUAGE="${data.language || ""}",URI="${data.uri.trim()}"`;
-    console.log(str);
+
     str = str
       .split(",")
       .filter(
         (s) =>
           s.trim() &&
-          !s
+          s
             .trim()
             .replace(/ +/g, "")
-            .match(/[=]\"?\"?/)
+            .match(/[=](\"|)(\"|)/)
       )
       .join(",");
-    console.log(str)
     return str;
   } catch (err) {
     console.log("Error audio media :", err);
@@ -60,14 +59,16 @@ export const getSubtitleMediaStr = (data: SubtitleMedia) => {
     }",DEFAULT=${(data.default && "YES") || "NO"},AUTOSELECT=${
       (data.autoSelect && "YES") || "NO"
     },LANGUAGE="${data.language || ""}",URI="${data.uri.trim()}"`;
+
     str = str
       .split(",")
       .filter(
         (s) =>
-          !s
+          s.trim() &&
+          s
             .trim()
             .replace(/ +/g, "")
-            .match(/[=]\"?\"?/)
+            .match(/[=](\"|)(\"|)/)
       )
       .join(",");
     return str;
@@ -115,10 +116,11 @@ export const getVideoStreamStr = (
       .split(",")
       .filter(
         (s) =>
-          !s
+          s.trim() &&
+          s
             .trim()
             .replace(/ +/g, "")
-            .match(/[=]\"?\"?/)
+            .match(/[=](\"|)(\"|)/)
       )
       .join(",");
     return str;
