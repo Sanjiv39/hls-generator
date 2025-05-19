@@ -377,7 +377,7 @@ const processSubtitles = async (
     const userMappings: Exclude<
       Config<Device>["subtitleMappings"],
       null | undefined | false
-    > = Array.isArray(config.audioMappings) ? config.audioMappings : [];
+    > = Array.isArray(config.subtitleMappings) ? config.subtitleMappings : [];
 
     if (!subtitles.length) {
       throw new Error("No valid subtitles");
