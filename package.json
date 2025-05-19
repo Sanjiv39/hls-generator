@@ -7,7 +7,7 @@
   "scripts": {
     "test": "node --loader ts-node/esm",
     "build": "npx tsc",
-    "start": "node dist/index.js",
+    "output-genMeta": "node dist/output.js -- --genMeta true",
     "dev": "nodemon src/index.ts",
     "input": "npx tsx src/input.ts",
     "output": "npx tsx src/output.ts",

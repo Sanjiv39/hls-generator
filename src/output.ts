@@ -9,26 +9,37 @@ import path from "path";
 import { appendFileSync, existsSync, mkdirSync, writeFileSync } from "fs";
 import { v7 } from "uuid";
 import chalkAnimation from "chalk-animation";
+import moment from "moment";
+import { main as generateMetadata } from "./input.js";
 // utils
 import { processFfmpegCmd } from "./utils/spawn.js";
-import { ProgressBar } from "./utils/progress.js";
 import { getFittedResolution, calculateAllBitrates } from "./utils/bitrate.js";
 import { getValidPreset } from "./utils/presets.js";
 import { getValidAccelerator } from "./utils/accelerator.js";
 import { getValidAudioCodec, getValidVideoCodec } from "./utils/codecs.js";
+import { ProgressBar } from "./utils/progress.js";
 import { convertBitsToUnit } from "./utils/bits.js";
 import { validateNumber } from "./utils/number.js";
-// data
-// @ts-ignore
-import { config } from "../config.js";
-let fileMetaData = await import("../metadata.json", {
-  assert: { type: "json" },
-});
+import { argsToObject } from "./utils/args.js";
+import { getConfig } from "./utils/config.js";
+// types
 import { FfMetaData, FfOptions } from "./types/ffmpeg.js";
 import { Device, Config } from "./types/config-types.js";
 // import moment from "moment";
 // @ts-ignore
-let metadata: FfMetaData = fileMetaData.default;
+let metadata: FfMetaData | undefined = fileMetaData?.default;
+const config = await getConfig();
+
+if (!config) {
+  throw new Error(
+    "Config not found. Please use a config.js file at the root directory of project similar to [config.example.js]\n************\n"
+  );
+}
+if (!metadata) {
+  throw new Error(
+    "Metadata not found. Please first generate by executing \n1.[npm run input] \n2. or with auto generating metadata [npm run output-genMeta] \n3. or use flag --genMeta\n************\n"
+  );
+}
 
 // console.log(metadata);
 
@@ -39,9 +50,11 @@ if (!existsSync("./out/")) {
 
 const uuid = v7();
 const inputFile =
-  (config.inputAbsolute
-    ? config.input
-    : path.join(import.meta.dirname, config.input || "")) || "";
+  // @ts-ignore
+  (config?.inputAbsolute
+    ? config?.input
+    : path.join(import.meta.dirname, config?.input || "")
+  ).replace("\\", "/") || "";
 const outputFolder = path
   .join(
     config.outputAbsolute ? "" : "out",
@@ -55,6 +68,10 @@ const outputFolder = path
       ""
   )
   .replace("\\", "/");
+
+if (!existsSync(`out`)) {
+  mkdirSync(`out`, { recursive: true });
+}
 
 console.log("Input :", inputFile);
 console.log("Output :", outputFolder);

@@ -87,7 +87,7 @@ export const createMasterPl = async (
     const videos = parsedData.videos || [];
     const audios = parsedData.audios || [];
     const subtitles = parsedData.subtitles || [];
-    console.log(parsedData);
+    // console.log(parsedData);
 
     let tags = `#EXTM3U\n\n#EXT-X-VERSION:${
       parsedData.version || 3
@@ -103,8 +103,7 @@ export const createMasterPl = async (
           const file =
             dt.uri
               .split("/")
-              .reverse()[0]
-              .match(/((.| )+)[.]([^.]*)$/)?.[1] || "";
+              .reverse()[1] || "";
           const lang = getLanguage(file);
           const name = (lang?.language || file).trim().replace(/[-_]/g, " ");
 
@@ -132,8 +131,7 @@ export const createMasterPl = async (
           const file =
             dt.uri
               .split("/")
-              .reverse()[0]
-              .match(/((.| )+)[.]([^.]*)$/)?.[1] || "";
+              .reverse()[1] || "";
           const lang = getLanguage(file);
           const name = (lang?.language || file).trim().replace(/[-_]/g, " ");
 

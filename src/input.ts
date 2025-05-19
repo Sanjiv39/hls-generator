@@ -3,11 +3,20 @@ import { writeFileSync } from "fs";
 import path from "path";
 // data
 // @ts-ignore
-import { config } from "../config.js";
+import { getConfig } from "./utils/config.js";
+import { argsToObject } from "./utils/args.js";
 import { calculateAllBitrates, getFittedResolution } from "./utils/bitrate.js";
 import { ProgressBar } from "./utils/progress.js";
 // types
 import { FfMetaData, FfProbeStreamTagged } from "./types/ffmpeg.js";
+import { convertBitsToUnit } from "./utils/bits.js";
+
+const config = await getConfig();
+if (!config) {
+  throw new Error(
+    "Config not found. Please use a config.js file at the root directory of project similar to [config.example.js]\n************\n"
+  );
+}
 
 const bar = new ProgressBar(0, {}, {}, { debug: false });
 
@@ -82,8 +91,8 @@ ffmpeg.ffprobe(inputFile, (err, data: FfMetaData) => {
         duration: getDuration(dt),
       }));
 
-    const str = JSON.stringify(data, null, 2);
-    writeFileSync("./metadata.json", str, { encoding: "utf-8" });
+        const str = JSON.stringify(data, null, 2);
+        writeFileSync("./metadata.json", str, { encoding: "utf-8" });
 
     const counts = {
       videos: data.videos?.length,
@@ -103,4 +112,9 @@ ffmpeg.ffprobe(inputFile, (err, data: FfMetaData) => {
   } catch (err) {
     console.error("Error probing metadata :", err);
   }
-});
+};
+
+const args = argsToObject<{ genMeta: string }>(process.argv);
+if (Object.hasOwn({ ...args }, "genMeta")) {
+  main();
+}

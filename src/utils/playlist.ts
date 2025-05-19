@@ -28,7 +28,7 @@ export const getAudioMediaStr = (data: AudioMedia) => {
           s
             .trim()
             .replace(/ +/g, "")
-            .match(/[=](\"|)(\"|)/)
+            .match(/[=](\"|)([^\"]+)(\"|)/)
       )
       .join(",");
     return str;
@@ -68,7 +68,7 @@ export const getSubtitleMediaStr = (data: SubtitleMedia) => {
           s
             .trim()
             .replace(/ +/g, "")
-            .match(/[=](\"|)(\"|)/)
+            .match(/[=](\"|)([^\"]+)(\"|)/)
       )
       .join(",");
     return str;
@@ -120,7 +120,7 @@ export const getVideoStreamStr = (
           s
             .trim()
             .replace(/ +/g, "")
-            .match(/[=](\"|)(\"|)/)
+            .match(/[=](\"|)([^\"]+)(\"|)/)
       )
       .join(",");
     return str;

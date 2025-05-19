@@ -266,6 +266,12 @@ export type Config<D extends Device = "none"> = {
   delaySubsBy: number;
 
   /**
+   * @description Whether to use duration if available under `formats`.
+   * @default false
+   */
+  useGeneralDuration: boolean;
+
+  /**
    *  @description Custom video output mappings respective to their resolutions fetched from `metadata.json`. Array or null. By default gives mappings of highest resolution till 360p
    * @example [{res: "1280x720p", bitrate: "1200k", name: "HD"}]
    */
