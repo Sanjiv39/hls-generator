@@ -22,8 +22,12 @@ export class ProgressBar {
   bar: SingleBar | null = null;
   timer: NodeJS.Timeout | null = null;
   params: Params = { totalTimestamp: zeroTimeStamp, totalTime: 0 };
+  private debug = true;
 
-  static validateTimestamp = (timestamp: string) => {
+  static validateTimestamp = (
+    timestamp: string,
+    options?: Partial<{ debug: boolean }>
+  ) => {
     const data = {
       parsedTimestamp: "",
       valid: false,
@@ -49,7 +53,9 @@ export class ProgressBar {
       data.valid = true;
       return data;
     } catch (err) {
-      console.error("Error validating timestamp :", err);
+      if (typeof options === "object" && options?.debug) {
+        console.error("Error validating timestamp :", err);
+      }
       return data;
     }
   };
@@ -69,7 +75,9 @@ export class ProgressBar {
     try {
       if (typeof timestamp === "string") {
         timestamp = timestamp.trim();
-        const parsed = ProgressBar.validateTimestamp(timestamp);
+        const parsed = ProgressBar.validateTimestamp(timestamp, {
+          debug: this.debug,
+        });
         if (moment.duration(timestamp).isValid() && parsed.parsedTimestamp) {
           template.stamp = parsed.parsedTimestamp;
           template.secs = moment.duration(timestamp).asSeconds();
@@ -117,7 +125,7 @@ export class ProgressBar {
         "Invalid value passed, required string in format hh:mm:ss or number >= 0"
       );
     } catch (err) {
-      console.error("Error getting timestamp :", err);
+      this.debug && console.error("Error getting timestamp :", err);
       return null;
     }
   };
@@ -140,18 +148,25 @@ export class ProgressBar {
       this.params.totalTime = data.secs;
       this.params.totalTimestamp = data.stamp;
     } catch (err) {
-      console.error("Error updating timestamp :", err);
+      this.debug && console.error("Error updating timestamp :", err);
     }
   };
 
   constructor(
     totalTimestamp: string | number = 0,
-    options?: ConstructorParameters<typeof SingleBar>[0],
-    preset?: ConstructorParameters<typeof SingleBar>[1]
+    options?: Partial<ConstructorParameters<typeof SingleBar>[0]>,
+    preset?: Partial<ConstructorParameters<typeof SingleBar>[1]>,
+    alterOptions?: Partial<{ debug: boolean }>
   ) {
     // @ts-ignore
     this.bar = new SingleBar({ ...options }, { ...preset });
     this.updateTotalTimestamp(totalTimestamp);
+    if (
+      typeof alterOptions === "object" &&
+      Object.hasOwn({ ...alterOptions }, "debug")
+    ) {
+      this.debug = !!alterOptions.debug as boolean;
+    }
   }
 
   start = (startValue: string | number = 0, payload?: object) => {
@@ -165,7 +180,7 @@ export class ProgressBar {
       }
       this.bar?.start(this.params.totalTime, startTime.secs, payload);
     } catch (err) {
-      console.error("Error starting progress bar :", err);
+      this.debug && console.error("Error starting progress bar :", err);
     }
   };
 
@@ -182,7 +197,7 @@ export class ProgressBar {
       // this.timer = setTimeout(() => {
       // }, 10);
     } catch (err) {
-      console.error("Error updating progress :", err);
+      this.debug && console.error("Error updating progress :", err);
     }
   };
 }

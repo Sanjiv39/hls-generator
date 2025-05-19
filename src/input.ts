@@ -9,29 +9,32 @@ import { ProgressBar } from "./utils/progress.js";
 // types
 import { FfMetaData, FfProbeStreamTagged } from "./types/ffmpeg.js";
 
-const bar = new ProgressBar();
+const bar = new ProgressBar(0, {}, {}, { debug: false });
 
 const getDuration = (dt: Partial<FfProbeStreamTagged>) => {
   try {
     let timestamp: string | number =
       String(dt.duration || "")?.trim() ||
       String(dt.tags?.DURATION || "")?.trim();
-    const validation = ProgressBar.validateTimestamp(timestamp);
-    console.log(
-      "Durations for media",
-      dt.index,
-      dt.duration,
-      dt.tags?.DURATION,
-      validation
-    );
+    const validation = ProgressBar.validateTimestamp(timestamp, {
+      debug: false,
+    });
+    // console.log(
+    //   "Durations for media",
+    //   dt.index,
+    //   dt.duration,
+    //   dt.tags?.DURATION,
+    //   validation
+    // );
     timestamp = validation.valid
       ? validation.parsedTimestamp
       : timestamp.match(/^[0-9.]+$/)
       ? Number(timestamp) || 0
       : timestamp;
-    const time = bar.getValidTimestamp(timestamp, {
-      defaultizeIfInvalid: true,
-    }).stamp;
+    const time =
+      bar.getValidTimestamp(timestamp, {
+        defaultizeIfInvalid: true,
+      })?.stamp || "";
     return time;
   } catch (err) {
     console.log("Error get-duration :", err);
@@ -89,11 +92,11 @@ ffmpeg.ffprobe(inputFile, (err, data: FfMetaData) => {
     };
     console.log(
       "Video durations :",
-      data.videos.map((dt) => ({ ind: dt.index, duration: dt.duration }))
+      data.videos?.map((dt) => ({ ind: dt.index, duration: dt.duration }))
     );
     console.log(
       "Audio durations :",
-      data.audios.map((dt) => ({ ind: dt.index, duration: dt.duration }))
+      data.audios?.map((dt) => ({ ind: dt.index, duration: dt.duration }))
     );
     console.log("Saved metadata. Found", counts);
     // ffmpeg().outputOptions();

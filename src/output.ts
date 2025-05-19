@@ -4,11 +4,14 @@ import Ffmpeg, {
   FfprobeStream,
   getAvailableEncoders,
 } from "fluent-ffmpeg";
+import ffmpeg from "ffmpeg";
 import path from "path";
 import { appendFileSync, existsSync, mkdirSync, writeFileSync } from "fs";
 import { v7 } from "uuid";
 import chalkAnimation from "chalk-animation";
 // utils
+import { processFfmpegCmd } from "./utils/spawn.js";
+import { ProgressBar } from "./utils/progress.js";
 import { getFittedResolution, calculateAllBitrates } from "./utils/bitrate.js";
 import { getValidPreset } from "./utils/presets.js";
 import { getValidAccelerator } from "./utils/accelerator.js";
@@ -23,12 +26,16 @@ let fileMetaData = await import("../metadata.json", {
 });
 import { FfMetaData, FfOptions } from "./types/ffmpeg.js";
 import { Device, Config } from "./types/config-types.js";
-import { ProgressBar } from "./utils/progress.js";
-import moment from "moment";
+// import moment from "moment";
 // @ts-ignore
 let metadata: FfMetaData = fileMetaData.default;
 
 // console.log(metadata);
+
+// If out/ not exists create
+if (!existsSync("./out/")) {
+  mkdirSync("./out", { recursive: true });
+}
 
 const uuid = v7();
 const inputFile =
@@ -51,7 +58,9 @@ const outputFolder = path
 
 console.log("Input :", inputFile);
 console.log("Output :", outputFolder);
-const ffmpegInput = Ffmpeg(inputFile);
+const ffmpegInput = Ffmpeg(`${inputFile}`);
+
+const FFMPEG = await new ffmpeg(inputFile);
 
 const processVideo = async (
   metadata: FfMetaData,
@@ -106,26 +115,30 @@ const processVideo = async (
           b.resolution.height * (b.bitrates[b.resolution.key]?.bitrates || 0) -
           a.resolution.height * (a.bitrates[a.resolution.key]?.bitrates || 0)
       )[0];
-    console.log("Found", video.resolution, video.bitrates);
+    // console.log("Found", video.resolution, video.bitrates);
 
     const totalDuration =
       ProgressBar.validateTimestamp(video.duration || "")?.parsedTimestamp ||
       "00:00:00";
 
     console.log("Video duration :", totalDuration);
-    const progressBar = new ProgressBar(totalDuration, {
-      format:
-        "Progress |" +
-        "{bar}" +
-        `| {percentage}% | ETA: {eta}s || {value}/{total} secs`,
-      barCompleteChar: "\u2588",
-      barIncompleteChar: "\u2591",
-      barCompleteString: "✅",
-      barIncompleteString: "🔃",
-      hideCursor: true,
-      barsize: 80,
-    });
-    progressBar.start();
+    const progressBar = new ProgressBar(
+      totalDuration,
+      {
+        format:
+          "Progress |" +
+          "{bar}" +
+          `| {percentage}% | ETA: {eta}s || {value}/{total} secs`,
+        barCompleteChar: "\u2588",
+        barIncompleteChar: "\u2591",
+        barCompleteString: "✅",
+        barIncompleteString: "🔃",
+        hideCursor: true,
+        barsize: 80,
+      },
+      {},
+      { debug: false }
+    );
 
     const resolutions = Object.entries(video.bitrates)
       .filter(
@@ -149,8 +162,11 @@ const processVideo = async (
     // Video process-----------------------------------------------------
     const outputOptions = Object.entries(options)
       .filter((dt) => dt[1] && dt[0])
-      .map((dt) => `-${dt[0]} ${String(dt[1]).trim()}`)
+      .map((dt) => `-${dt[0]} "${String(dt[1]).trim()}"`)
       .concat([
+        "-f hls",
+        `-hls_time ${hlsTime}`,
+        `-hls_playlist_type vod`,
         // mappings
         ...resolutions.map((dt) => `-map 0:${video.index}`),
         // codecs
@@ -160,21 +176,18 @@ const processVideo = async (
               userVMappings[i]?.codec?.trim().toLowerCase() || vCodec
             }`
         ),
-        "-f hls",
-        `-hls_time ${hlsTime}`,
-        `-hls_playlist_type vod`,
         // mapping definitions
         "-var_stream_map",
-        `${resolutions
+        `"${resolutions
           .map(
             (dt, i) =>
               `v:${i},name:${userVMappings[i]?.name?.trim() || `${dt.height}p`}`
           )
-          .join(" ")}`,
-        `-master_pl_name ${
+          .join(" ")}"`,
+        `-master_pl_name "${
           config.hlsMasterFile?.trim()?.match(/(.| )+[.]m3u8/)?.[0] ||
           "master.m3u8"
-        }`,
+        }"`,
         // resolutions
         ...resolutions.map(
           (dt, i) =>
@@ -193,52 +206,25 @@ const processVideo = async (
               )?.metric || 0
             )}k`
         ),
-        `-hls_segment_filename ${outputFolder}/video/%v/${
+        `-hls_segment_filename "${outputFolder}/video/%v/${
           config.videoSegment || config.segment || "segment%d.ts"
-        }`,
+        }"`,
       ]);
-    await new Promise<boolean>((res, rej) => {
-      ffmpegInput
-        .inputOptions(
-          Object.entries(inputOptions)
-            .filter((dt) => dt[1] && dt[0])
-            .map((dt) => `-${dt[0]} ${String(dt[1]).trim()}`)
-        )
-        .outputOptions(outputOptions)
-        .output(
-          `${outputFolder}/video/%v/${
-            config.videoSingleM3u8?.trim()?.match(/(.| )+[.]m3u8/)?.[0] ||
-            "index.m3u8"
-          }`
-        )
-        .on("start", (commandLine) => {
-          console.log("Video processing started...............");
-          console.log("FFmpeg command:", commandLine);
-          writeFileSync("./command.sh", commandLine);
-        })
-        .on("progress", (progress) => {
-          // console.log(
-          //   `Video process progress => ${
-          //     progress.percent?.toFixed(2) || 0
-          //   }%, frames = ${progress.frames}, speed = ${
-          //     progress.currentKbps || 0
-          //   }kbps - ${progress.currentFps || 0}fps, target = ${
-          //     progress.targetSize
-          //   }, timestamp = ${progress.timemark}`
-          // );
-          progressBar.update(progress.timemark);
-        })
-        .on("end", () => {
-          console.log("✅ Done generating video chunks!");
-          progressBar.bar?.stop();
-          res(true);
-        })
-        .on("error", (err) => {
-          console.error("❌ FFmpeg Error:", err.message);
-          rej(err);
-        })
-        .run();
-    });
+
+    const iOpts = Object.entries(inputOptions)
+      .filter((dt) => dt[1] && dt[0])
+      .map((dt) => `-${dt[0]} "${String(dt[1]).trim()}"`);
+    const out = `"${outputFolder}/video/%v/${
+      config.videoSingleM3u8?.trim()?.match(/(.| )+[.]m3u8/)?.[0] ||
+      "index.m3u8"
+    }"`;
+
+    console.log("Starting to process video.....................");
+    appendFileSync(
+      "./command.sh",
+      "# Video -----------------------------------------------\n\n"
+    );
+    await processFfmpegCmd(inputFile, out, iOpts, outputOptions, progressBar);
   } catch (err) {
     console.log("Error processing video :", err);
   }
@@ -299,80 +285,59 @@ const processAudio = async (
           hideCursor: true,
           barsize: 80,
         });
-        progressBar.start();
-        await new Promise<boolean>((res, rej) => {
-          runner
-            .input(inputFile)
-            .outputOptions(
-              outputOptions.concat([
-                `-map`,
-                `0:${audio.index}`,
-                // format to hls
-                "-f",
-                "hls",
-                `-hls_time`,
-                `${hlsTime}`,
-                `-hls_playlist_type`,
-                `vod`,
-                // codec
-                "-c:a",
-                userMappings[i]?.codec || aCodec,
-                "-var_stream_map",
-                `a:0,name:${name}`,
-                `-master_pl_name`,
-                `${name}/${config.hlsMasterFile?.trim() || "master"}.m3u8`,
-                // bitrate
-                "-b:a",
-                `${Math.round(
-                  convertBitsToUnit(
-                    Number(userMappings[i]?.bitrate || audio.bit_rate),
-                    "k"
-                  )?.metric || 128
-                )}k`,
-                // segment
-                `-hls_segment_filename`,
-                `${outputFolder}/audio/%v/${
-                  config.audioSegment || config.segment || "segment%d.ts"
-                }`,
-              ])
-            )
-            .output(
-              `${outputFolder}/audio/%v/${
-                config.audioSingleM3u8?.trim()?.match(/(.| )+[.]m3u8/)?.[0] ||
-                "index.m3u8"
-              }`
-            );
-          runner
-            .on("start", (commandLine) => {
-              console.log("Name :", name);
-              chalkAnimation.glitch("Processing...............").start();
-              console.log("FFmpeg command:", commandLine);
-              appendFileSync(
-                "./command.sh",
-                "\n\nAudio" + Array(50).fill("-").join("") + "\n"
-              );
-              appendFileSync("./command.sh", commandLine);
-            })
-            .on("progress", (progress) => {
-              progressBar.update(progress.timemark);
-            })
-            .on("end", () => {
-              console.log("✅ Generated audio", name);
-              progressBar.bar?.stop();
-              res(true);
-            })
-            .on("error", (err) => {
-              console.error("❌ FFmpeg Error:", err.message);
-              rej(err);
-            })
-            .run();
-        });
+        // progressBar.start();
+
+        const iOpts = Object.entries(inputOptions)
+          .filter((dt) => dt[1] && dt[0])
+          .map((dt) => `-${dt[0]} "${String(dt[1]).trim()}"`);
+        const oOpts = outputOptions.concat([
+          `-map`,
+          `0:${audio.index}`,
+          // format to hls
+          "-f",
+          "hls",
+          `-hls_time`,
+          `${hlsTime}`,
+          `-hls_playlist_type`,
+          `vod`,
+          // codec
+          "-c:a",
+          userMappings[i]?.codec || aCodec,
+          "-var_stream_map",
+          `"a:0,name:${name}"`,
+          `-master_pl_name`,
+          `"${name}/${config.hlsMasterFile?.trim() || "master"}.m3u8"`,
+          // bitrate
+          "-b:a",
+          `${Math.round(
+            convertBitsToUnit(
+              Number(userMappings[i]?.bitrate || audio.bit_rate),
+              "k"
+            )?.metric || 128
+          )}k`,
+          // segment
+          `-hls_segment_filename`,
+          `"${outputFolder}/audio/%v/${
+            config.audioSegment || config.segment || "segment%d.ts"
+          }"`,
+        ]);
+        const out = `"${outputFolder}/audio/%v/${
+          config.audioSingleM3u8?.trim()?.match(/(.| )+[.]m3u8/)?.[0] ||
+          "index.m3u8"
+        }"`;
+
+        await processFfmpegCmd(inputFile, out, iOpts, oOpts, progressBar);
       } catch (err) {
         console.log("Error audio :", err);
       }
     };
 
     console.log("Starting to process audios.....................");
+    appendFileSync(
+      "./command.sh",
+      "\n\n# Audio -----------------------------------------------\n\n"
+    );
+
     for (let i = 0; i < audios.length; i++) {
       const data = audios[i];
       await audioPr(data, i);
@@ -455,63 +420,34 @@ const processSubtitles = async (
           hideCursor: true,
           barsize: 80,
         });
-        progressBar.start();
-        await new Promise<boolean>((res, rej) => {
-          runner
-            .input(inputFile)
-            .inputOptions([
-              `-itsoffset`,
-              String(
-                validateNumber(userMappings[i]?.delayBy, { defaultValue: 0 }) ||
-                  skipTime
-              ),
-            ])
-            .outputOptions(`-map`, `0:${subtitleData.index}`, "-c:s", codec)
-            .output(
-              `${outputFolder}/subs/${
-                userMappings[i]?.name || `sub-${i + 1}`
-              }.vtt`
-            );
-          runner
-            .on("start", (commandLine) => {
-              console.log("Name :", name);
-              chalkAnimation.glitch("Processing...............").start();
-              console.log("FFmpeg command:", commandLine);
-              appendFileSync(
-                "./command.sh",
-                "\n\nSubtitle" + Array(50).fill("-").join("") + "\n"
-              );
-              appendFileSync("./command.sh", commandLine);
-            })
-            .on("progress", (progress) => {
-              // console.log(
-              //   `progress => ${progress.percent?.toFixed(2) || 0}%, frames = ${
-              //     progress.frames
-              //   }, speed = ${progress.currentKbps || 0}kbps - ${
-              //     progress.currentFps || 0
-              //   }fps, target = ${progress.targetSize}, timestamp = ${
-              //     progress.timemark
-              //   }`
-              // );
-              progressBar.update(progress.timemark);
-            })
-            .on("end", () => {
-              console.log("✅ Generated subtitle", name);
-              progressBar.bar?.stop();
-              res(true);
-            })
-            .on("error", (err) => {
-              console.error("❌ FFmpeg Error:", err.message);
-              rej(err);
-            })
-            .run();
-        });
+
+        const iOpts = Object.entries(inputOptions)
+          .filter((dt) => dt[1] && dt[0])
+          .map((dt) => `-${dt[0]} "${String(dt[1]).trim()}"`)
+          .concat([
+            `-itsoffset`,
+            String(
+              validateNumber(userMappings[i]?.delayBy, {
+                defaultValue: 0,
+              }) || skipTime
+            ),
+          ]);
+        const oOpts = [`-map`, `0:${subtitleData.index}`, "-c:s", codec];
+        const out = `"${outputFolder}/subs/${
+          userMappings[i]?.name || `sub-${i + 1}`
+        }.vtt"`;
+
+        await processFfmpegCmd(inputFile, out, iOpts, oOpts, progressBar);
       } catch (err) {
         console.log("Error subtitle :", err);
       }
     };
 
     console.log("Starting to process subtitles.....................");
+    appendFileSync(
+      "./command.sh",
+      "\n\n# Subtitles -----------------------------------------------\n\n"
+    );
     for (let i = 0; i < subtitles.length; i++) {
       const subData = subtitles[i];
       // Add cloned input with different delay [-itsoffset] as indexed with [i]
@@ -578,6 +514,7 @@ const generateOutput = async () => {
     chalkAnimation.rainbow("S T A R T").start();
     console.log("❇️❇️❇️❇️❇️❇️❇️❇️❇️❇️❇️❇️❇️❇️❇️❇️❇️❇️❇️❇️❇️");
     writeFileSync("./command.sh", "");
+
     // Video process-----------------------------------------------------
     doProcess.video &&
       (await processVideo(metadata, oOptions, iOptions, hlsTime));

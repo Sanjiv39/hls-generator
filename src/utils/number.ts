@@ -1,4 +1,4 @@
-export type ValidateNumberOptions<D extends any = number> = Partial<{
+export type ValidateNumberOptions<D = number> = Partial<{
   /**
    * @description Default value returned if validation failed.
    * @default 0
@@ -25,7 +25,8 @@ export type ValidateNumberOptions<D extends any = number> = Partial<{
    */
   customValidation: (value: number) => number | D | undefined;
 }>;
-export const validateNumber = <D extends any = number>(
+
+export const validateNumber = <D = number>(
   value: any,
   options?: ValidateNumberOptions<D>
 ): D => {

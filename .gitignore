@@ -4,6 +4,8 @@ out/*
 **/*.zip
 **/*.mkv
 **/*.mp4
+**/*.m3u8
+**/*.m3u
 
 node_modules/*
 dist/*
