@@ -7,6 +7,13 @@ import {
   WriteFileOptions,
 } from "fs";
 import Ffmpeg from "fluent-ffmpeg";
+import { getLanguage } from "./utils/language";
+import {
+  getAudioMediaStr,
+  getSubtitleMediaStr,
+  getVideoStreamStr,
+} from "./utils/playlist";
+import { exec } from "child_process";
 
 const parser = new Parser();
 // const m3uFile = readFileSync("./src/templates/subtitle-index.m3u8", {
@@ -38,15 +45,12 @@ type Attribute = {
 };
 type VideoSegment = Partial<Attribute> & {
   uri: string;
-  name: string
 };
 type AudioSegment = {
   uri: string;
-  name: string
 };
 type SubtitleSegment = {
   uri: string;
-  name: string
 };
 
 type ParsedHLSSegments = {
@@ -57,18 +61,119 @@ type ParsedHLSSegments = {
   subtitles: SubtitleSegment[];
 };
 
-export const createMasterPl = async(parsedData?: Partial<ParsedHLSSegments>) => {
+const comment =
+  "# You can edit LANGUAGE, NAME, DEFAULT and AUTOSELECT in audios and subtitles ✔️\n# ⚠️ Please don't change other fields if you don't know\n# Above 2 comments can be removed ⬆️";
+
+export const createMasterPl = async (
+  dir: string,
+  parsedData?: Partial<ParsedHLSSegments>
+) => {
   try {
-    if(!parsedData || typeof parsedData !== "object" || Array.isArray(parsedData)){
+    if (
+      typeof dir !== "string" ||
+      !dir.trim() ||
+      !existsSync(dir.trim()) ||
+      !statSync(dir.trim()).isDirectory()
+    ) {
+      throw new Error("Invalid directory, must exist");
+    }
+    if (
+      !parsedData ||
+      typeof parsedData !== "object" ||
+      Array.isArray(parsedData)
+    ) {
       throw new Error("Parsed data must be valid");
     }
-    const videos = parsedData.videos || []
-    const audios = parsedData.audios || []
-    const subtitles = parsedData.subtitles || []
+    const videos = parsedData.videos || [];
+    const audios = parsedData.audios || [];
+    const subtitles = parsedData.subtitles || [];
+    console.log(parsedData);
 
-    
+    let tags = `#EXTM3U\n\n#EXT-X-VERSION:${
+      parsedData.version || 3
+    }\n#EXT-X-ALLOW-CACHE:${
+      (parsedData.allowCache && "YES") || "NO"
+    }\n\n${comment}\n\n`;
+
+    // Audio
+    let audioMedia = `# Audios\n`;
+    audioMedia += audios
+      .map((dt, i) => {
+        try {
+          const file =
+            dt.uri
+              .split("/")
+              .reverse()[0]
+              .match(/((.| )+)[.]([^.]*)$/)?.[1] || "";
+          const lang = getLanguage(file);
+          const name = (lang?.language || file).trim().replace(/[-_]/g, " ");
+
+          const str = getAudioMediaStr({
+            uri: dt.uri,
+            default: !i,
+            autoSelect: !i,
+            language: (lang?.language && lang.code) || undefined,
+            name: name[0].toUpperCase() + name.slice(1).toLowerCase(),
+          });
+          return str;
+        } catch (err) {
+          console.log(err);
+          return "";
+        }
+      })
+      .filter((s) => s.trim())
+      .join("\n");
+
+    // Subs
+    let subMedia = `# Subtitles\n`;
+    subMedia += subtitles
+      .map((dt, i) => {
+        try {
+          const file =
+            dt.uri
+              .split("/")
+              .reverse()[0]
+              .match(/((.| )+)[.]([^.]*)$/)?.[1] || "";
+          const lang = getLanguage(file);
+          const name = (lang?.language || file).trim().replace(/[-_]/g, " ");
+
+          const str = getSubtitleMediaStr({
+            uri: dt.uri,
+            default: !i,
+            autoSelect: !i,
+            language: (lang?.language && lang.code) || undefined,
+            name: name[0].toUpperCase() + name.slice(1).toLowerCase(),
+          });
+          return str;
+        } catch (err) {
+          console.log(err);
+          return "";
+        }
+      })
+      .filter((s) => s.trim())
+      .join("\n");
+
+    // Video
+    let videoMedia = `# Streams\n`;
+    videoMedia += getVideoStreamStr(
+      videos.map((dt) => ({
+        uri: dt.uri,
+        bandwidth: dt.BANDWIDTH,
+        codecs: dt.CODECS,
+        resolution: `${dt.RESOLUTION?.width || ""}x${
+          dt.RESOLUTION?.height || ""
+        }`,
+      })),
+      { linkAudio: !!audioMedia.trim(), linkSubtitle: !!subMedia.trim() }
+    );
+
+    const arr = [tags, audioMedia, subMedia, videoMedia];
+    const str = arr.filter((s) => s.trim()).join("\n");
+    // console.log(arr);
+
+    writeFileSync(`${dir}/master.m3u8`, str);
   } catch (err) {
-    console.log("Error creating master playlist :", err)
+    console.log("Error creating master playlist :", err);
   }
 };
 
@@ -166,7 +271,9 @@ export const parseHLSStreams = async (
         const path = `${paths.audio}/${audioIndex}`;
         const ffdata = await probeInput(path);
         if (ffdata.streams.every((dt) => dt.codec_type === "audio")) {
-          segments.audios.push({ uri: `audio/${audioIndex}` });
+          segments.audios.push({
+            uri: `audio/${audioIndex}`,
+          });
         }
       } catch (err) {}
     }
@@ -195,9 +302,12 @@ export const parseHLSStreams = async (
   }
 };
 
-parseHLSStreams({
-  dir: "./out/turning-rajasthan",
+// Test
+const dir = "./out/turning-rajasthan";
+const data = await parseHLSStreams({
+  dir: dir,
   videoMaster: "master.m3u8",
   audioIndexes: ["audio-1/index.m3u8"],
   subtitles: ["sub-1"],
 });
+data && createMasterPl(dir, data);
