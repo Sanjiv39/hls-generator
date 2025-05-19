@@ -11,10 +11,12 @@
     "dev": "nodemon src/index.ts",
     "input": "npx tsx src/input.ts",
     "output": "npx tsx src/output.ts",
+    "m3u": "npx tsx src/m3u.ts",
     "convert": "npm run input && npm run output",
     "dev-test": "nodemon -- ",
     "dev-input": "nodemon src/input.ts",
     "dev-output": "nodemon src/output.ts",
+    "dev-m3u": "nodemon src/m3u.ts",
     "get-metadata": "npm run build && node dist/index.js"
   },
   "author": "Sanjiv39",
