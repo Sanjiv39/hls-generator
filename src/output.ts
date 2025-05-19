@@ -159,6 +159,10 @@ const processVideo = async (
       null | undefined | false
     > = Array.isArray(config.videoMappings) ? config.videoMappings : [];
 
+    const masterFile =
+      config.hlsMasterFile?.trim()?.match(/(.| )+[.]m3u8/)?.[0] ||
+      "master.m3u8";
+
     // Video process-----------------------------------------------------
     const outputOptions = Object.entries(options)
       .filter((dt) => dt[1] && dt[0])
@@ -184,10 +188,7 @@ const processVideo = async (
               `v:${i},name:${userVMappings[i]?.name?.trim() || `${dt.height}p`}`
           )
           .join(" ")}"`,
-        `-master_pl_name "${
-          config.hlsMasterFile?.trim()?.match(/(.| )+[.]m3u8/)?.[0] ||
-          "master.m3u8"
-        }"`,
+        `-master_pl_name "${masterFile}"`,
         // resolutions
         ...resolutions.map(
           (dt, i) =>
@@ -225,8 +226,14 @@ const processVideo = async (
       "# Video -----------------------------------------------\n\n"
     );
     await processFfmpegCmd(inputFile, out, iOpts, outputOptions, progressBar);
+
+    const data = {
+      masterFile: masterFile,
+    };
+    return data;
   } catch (err) {
     console.log("Error processing video :", err);
+    return null;
   }
 };
 
@@ -268,8 +275,14 @@ const processAudio = async (
 
     const audioPr = async (audio: (typeof audios)[number], i: number) => {
       try {
-        const runner = Ffmpeg();
         const name = userMappings[i]?.name || `audio-${i + 1}`;
+        const masterFile = `${name}/${
+          config.hlsMasterFile?.trim() || "master"
+        }.m3u8`;
+        const indexFile =
+          config.audioSingleM3u8?.trim()?.match(/(.| )+[.]m3u8/)?.[0] ||
+          "index.m3u8";
+
         const totalDuration =
           ProgressBar.validateTimestamp(audio.duration || "")
             ?.parsedTimestamp || "00:00:00";
@@ -285,7 +298,6 @@ const processAudio = async (
           hideCursor: true,
           barsize: 80,
         });
-        // progressBar.start();
 
         const iOpts = Object.entries(inputOptions)
           .filter((dt) => dt[1] && dt[0])
@@ -306,7 +318,7 @@ const processAudio = async (
           "-var_stream_map",
           `"a:0,name:${name}"`,
           `-master_pl_name`,
-          `"${name}/${config.hlsMasterFile?.trim() || "master"}.m3u8"`,
+          `"${masterFile}"`,
           // bitrate
           "-b:a",
           `${Math.round(
@@ -321,12 +333,11 @@ const processAudio = async (
             config.audioSegment || config.segment || "segment%d.ts"
           }"`,
         ]);
-        const out = `"${outputFolder}/audio/%v/${
-          config.audioSingleM3u8?.trim()?.match(/(.| )+[.]m3u8/)?.[0] ||
-          "index.m3u8"
-        }"`;
+        const out = `"${outputFolder}/audio/%v/${indexFile}"`;
 
         await processFfmpegCmd(inputFile, out, iOpts, oOpts, progressBar);
+
+        return `${name}/${indexFile}`;
       } catch (err) {
         console.log("Error audio :", err);
       }
@@ -338,13 +349,20 @@ const processAudio = async (
       "\n\n# Audio -----------------------------------------------\n\n"
     );
 
+    const audioFiles: string[] = [];
     for (let i = 0; i < audios.length; i++) {
       const data = audios[i];
-      await audioPr(data, i);
+      const file = await audioPr(data, i);
+      file?.trim() && audioFiles.push(file.trim());
     }
     console.log("✅ Finished processing audios.....................");
+    const data = {
+      audios: audioFiles,
+    };
+    return data;
   } catch (err) {
-    console.log("Error processing audio :", err);
+    console.log("Error processing audios :", err);
+    return null;
   }
 };
 
@@ -403,7 +421,6 @@ const processSubtitles = async (
       i: number
     ) => {
       try {
-        const runner = Ffmpeg();
         const name = userMappings[i]?.name || `sub-${i + 1}`;
         const totalDuration =
           ProgressBar.validateTimestamp(subtitleData.duration || "")
@@ -433,11 +450,10 @@ const processSubtitles = async (
             ),
           ]);
         const oOpts = [`-map`, `0:${subtitleData.index}`, "-c:s", codec];
-        const out = `"${outputFolder}/subs/${
-          userMappings[i]?.name || `sub-${i + 1}`
-        }.vtt"`;
+        const out = `"${outputFolder}/subs/${name}.vtt"`;
 
         await processFfmpegCmd(inputFile, out, iOpts, oOpts, progressBar);
+        return `${name}.vtt`;
       } catch (err) {
         console.log("Error subtitle :", err);
       }
@@ -448,14 +464,22 @@ const processSubtitles = async (
       "./command.sh",
       "\n\n# Subtitles -----------------------------------------------\n\n"
     );
+
+    const vttFiles: string[] = [];
     for (let i = 0; i < subtitles.length; i++) {
       const subData = subtitles[i];
       // Add cloned input with different delay [-itsoffset] as indexed with [i]
-      await subtitlePr(subData, i);
+      const vtt = await subtitlePr(subData, i);
+      vtt?.trim() && vttFiles.push(vtt.trim());
     }
     console.log("✅ Finished processing subtitles.....................");
+    const data = {
+      subtitles: vttFiles,
+    };
+    return data;
   } catch (err) {
     console.log("Error processing subtitles :", err);
+    return null;
   }
 };
 
@@ -515,17 +539,37 @@ const generateOutput = async () => {
     console.log("❇️❇️❇️❇️❇️❇️❇️❇️❇️❇️❇️❇️❇️❇️❇️❇️❇️❇️❇️❇️❇️");
     writeFileSync("./command.sh", "");
 
+    const data = {
+      videoMasterFile: "",
+      audioIndexFiles: [] as string[],
+      subtitleFiles: [] as string[],
+    };
+
     // Video process-----------------------------------------------------
-    doProcess.video &&
-      (await processVideo(metadata, oOptions, iOptions, hlsTime));
+    const videoRes =
+      (doProcess.video &&
+        (await processVideo(metadata, oOptions, iOptions, hlsTime))) ||
+      null;
 
     // Audio process-----------------------------------------------------
-    doProcess.audio &&
-      (await processAudio(metadata, oOptions, iOptions, hlsTime));
+    const audioRes =
+      (doProcess.audio &&
+        (await processAudio(metadata, oOptions, iOptions, hlsTime))) ||
+      null;
 
     // Subtitles process-----------------------------------------------------
-    doProcess.subtitle &&
-      (await processSubtitles(metadata, oOptions, iOptions));
+    const subtitleRes =
+      (doProcess.subtitle &&
+        (await processSubtitles(metadata, oOptions, iOptions))) ||
+      null;
+
+    data.videoMasterFile = videoRes?.masterFile || "";
+    data.audioIndexFiles = audioRes?.audios || [];
+    data.subtitleFiles = subtitleRes?.subtitles || [];
+
+    console.log("\n\nFile mappings :", data);
+    console.log("\n\n");
+
     chalkAnimation
       .karaoke("E N D 🔚🔚🔚🔚🔚🔚🔚🔚🔚🔚🔚🔚🔚🔚🔚🔚🔚🔚🔚🔚🔚🔚🔚")
       .start();
