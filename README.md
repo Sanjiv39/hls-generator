@@ -53,6 +53,8 @@ npm i
 
 ## 🕹️ Process
 
+Create a `config.js` similar to [`config.example.js`](config.example.js)
+
 1. Generate `metadata.json` from input file
 
 ```bash
