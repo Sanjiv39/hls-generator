@@ -7,12 +7,12 @@ import {
   WriteFileOptions,
 } from "fs";
 import Ffmpeg from "fluent-ffmpeg";
-import { getLanguage } from "./utils/language";
+import { getLanguage } from "./utils/language.js";
 import {
   getAudioMediaStr,
   getSubtitleMediaStr,
   getVideoStreamStr,
-} from "./utils/playlist";
+} from "./utils/playlist.js";
 import { exec } from "child_process";
 
 const parser = new Parser();
@@ -89,6 +89,7 @@ export const createMasterPl = async (
     const subtitles = parsedData.subtitles || [];
     // console.log(parsedData);
 
+    // Info and tags
     let tags = `#EXTM3U\n\n#EXT-X-VERSION:${
       parsedData.version || 3
     }\n#EXT-X-ALLOW-CACHE:${

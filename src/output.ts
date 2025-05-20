@@ -4,7 +4,6 @@ import Ffmpeg, {
   FfprobeStream,
   getAvailableEncoders,
 } from "fluent-ffmpeg";
-import ffmpeg from "ffmpeg";
 import path from "path";
 import {
   appendFileSync,
@@ -15,7 +14,7 @@ import {
 } from "fs";
 import { v7 } from "uuid";
 import chalkAnimation from "chalk-animation";
-import moment from "moment";
+// import moment from "moment";
 // import { main as generateMetadata } from "./input.js";
 // utils
 import { processFfmpegCmd } from "./utils/spawn.js";
@@ -51,7 +50,6 @@ if (!metadata) {
     "Metadata not found. Please first generate by executing \n1.[npm run input] \n2. or with auto generating metadata [npm run output-genMeta] \n3. or use flag --genMeta\n************\n"
   );
 }
-
 // console.log(metadata);
 
 // If out/ not exists create
@@ -84,8 +82,6 @@ console.log("Input :", inputFile);
 console.log("Output :", outputFolder);
 const ffmpegInput = Ffmpeg(`${inputFile}`);
 
-const FFMPEG = await new ffmpeg(inputFile);
-
 const processVideo = async (
   metadata: FfMetaData,
   options: FfOptions<Device>,
@@ -95,6 +91,8 @@ const processVideo = async (
   try {
     // Videos
     // console.log(metadata.videos);
+
+    // Get valid videos those which have height
     const videos =
       metadata.videos
         ?.map((dt) => ({
@@ -120,8 +118,6 @@ const processVideo = async (
         >(
           // @ts-ignore
           (dt) => !!dt.resolution?.height
-          // &&
-          // !!dt.bitrates?.[dt.resolution.key]
         ) || [];
     // console.log(videos.length);
 
@@ -129,6 +125,7 @@ const processVideo = async (
       throw new Error("No valid videos");
     }
 
+    // If user provides valid video index to chunk select that, or the first available
     const video =
       (typeof config.chunkVideoIndex === "number" &&
         !Number.isNaN(config.chunkVideoIndex) &&
@@ -141,11 +138,12 @@ const processVideo = async (
       )[0];
     // console.log("Found", video.resolution, video.bitrates);
 
+    // Get timestamp and initialize progress-bar
     const totalDuration =
       ProgressBar.validateTimestamp(video.duration || "")?.parsedTimestamp ||
       "00:00:00";
+    // console.log("Video duration :", totalDuration);
 
-    console.log("Video duration :", totalDuration);
     const progressBar = new ProgressBar(
       totalDuration,
       {
@@ -164,17 +162,19 @@ const processVideo = async (
       { debug: false }
     );
 
+    // Only get valid resolutions
     const resolutions = Object.entries(video.bitrates)
       .filter(
         (dt) =>
-          !Number.isNaN(dt[1]?.bitrates) &&
-          Number.isFinite(dt[1]?.bitrates) &&
+          validateNumber(dt[1].bitrates, {
+            defaultValue: 1,
+          }) &&
           dt[1].bitrates &&
           dt[0]
       )
       .map((dt) => ({ ...(dt[1] as Required<(typeof dt)[1]>) }));
 
-    // default codec
+    // default video codec
     const vCodec = getValidVideoCodec(config.encodingDevice, config.videoCodec);
 
     // User video mappings
@@ -558,12 +558,9 @@ const generateOutput = async () => {
         undefined,
     };
 
-    const hlsTime =
-      (typeof config.hlsChunkTime === "number" &&
-        Number.isFinite(config.hlsChunkTime) &&
-        config.hlsChunkTime > 0 &&
-        config.hlsChunkTime) ||
-      10;
+    const hlsTime = validateNumber(config.hlsChunkTime, {
+      defaultValue: 10,
+    });
 
     const doProcess = {
       video: Object.hasOwn(config, "chunkVideo") ? !!config.chunkVideo : true,

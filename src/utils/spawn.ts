@@ -1,7 +1,7 @@
 import { appendFileSync, existsSync } from "fs";
 import fs from "fs";
 import { spawn } from "child_process";
-import { ProgressBar } from "./progress";
+import { ProgressBar } from "./progress.js";
 
 const progressBar = new ProgressBar(0, {}, {}, { debug: false });
 

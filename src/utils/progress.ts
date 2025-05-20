@@ -156,31 +156,6 @@ export class ProgressBar {
     }
   };
 
-  getValidTimestampFromMultiple = (
-    timestamps: (string | number)[],
-    options?: Partial<{ defaultizeIfInvalid: boolean }>
-  ) => {
-    try {
-      if (
-        !Array.isArray(timestamps) ||
-        !timestamps.every((t) => typeof t === "string" || typeof t === "number")
-      ) {
-        throw new Error("Required array of each either string or number");
-      }
-      for (let i = 0; i < timestamps.length; i++) {
-        const stamp = timestamps[i];
-        const data = this.getValidTimestamp(stamp, options);
-        if (data) {
-          return data;
-        }
-      }
-      throw new Error("No valid timestamp received");
-    } catch (err) {
-      console.error("Error getting any valid timestamp :", err);
-      return null;
-    }
-  };
-
   /**
    * @description Updates `totalTimestamp` and `totalTime` if valid.
    * @description Can also default to zero if invalid value by setting option `defaultizeIfInvalid`
