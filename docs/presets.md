@@ -3,7 +3,7 @@
 | **Platform** | **Presets**                                                                    |
 | ------------ | ------------------------------------------------------------------------------ |
 | Intel        | `veryfast`, `faster`, `fast`, `medium`, `slow`, `slower`, `veryslow`, `number` |
-| NVIDIA       | `p1` → `p7`, `slow"`, `medium`, `fast`, `default`,                             |
+| NVIDIA       | `p1` → `p7`, `slow`, `medium`, `fast`, `default`,                              |
 | AMD          | `balanced`, `speed`, `quality`                                                 |
 
 ## ✅ Notes
