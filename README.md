@@ -2,6 +2,14 @@
 
 A Node.js script that converts any video file into an HLS (HTTP Live Streaming) format with separate audio, video, and subtitle segments. Hardware-accelerated encoding and decoding are supported using **AMD**, **NVIDIA**, and **Intel** GPU/CPU.
 
+## ❔ Usage of HLS
+
+- Only one set of streams (1 video, 1 audio, and 1 subtitle) is rendered at a time, reducing server load.
+- Adaptive bitrate streaming allows the video resolution to adjust automatically based on the user's internet connection.
+- Streams are broken into small, time-based segments, so only the current and nearby chunks are loaded, minimizing bandwidth usage and server stress.
+- Commonly used by streaming services to provide smooth and scalable content delivery.
+- HLS content can be served via static servers or CDNs, ensuring fast and efficient video playback.
+
 ## ✨ Features
 
 - Converts any video to HLS stream format
@@ -77,7 +85,7 @@ npm run convert
 
 ## 📗 References
 
-- [Examples](examples/)
+- [Config Examples](examples/config/)
 - [Codecs](docs/codecs.md)
 - [Hardware Accelerators](docs/accelerators.md)
 - [Encoder Presets](docs/presets.md)
