@@ -1,6 +1,6 @@
 /**
- * Keep this same comment for types also in config.js
- * @typedef {import("./src/types/config-types.js").Config} Config
+ * Types location will change to when you use in config.js in root dir refer to "config.example.js"
+ * @typedef {import("../../src/types/config-types.js").Config} Config
  */
 
 /** @type {Partial<Config>} */
@@ -9,11 +9,9 @@ export const config = {
   inputAbsolute: false,
   outputDir: "my-hls",
   hlsChunkTime: 10,
-  encodingDevice: "intel",
-  decodingDevice: "intel",
+  encodingDevice: "amd",
+  decodingDevice: "amd",
   preset: "fast",
-  crf: 30,
-  threads: 10,
   hlsMasterFile: "",
   segment: "",
   videoSegment: "",
