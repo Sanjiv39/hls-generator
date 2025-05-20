@@ -62,7 +62,7 @@ type ParsedHLSSegments = {
 };
 
 const comment =
-  "# You can edit LANGUAGE, NAME, DEFAULT and AUTOSELECT in audios and subtitles ✔️\n# ⚠️ Please don't change other fields if you don't know\n# Above 2 comments can be removed ⬆️";
+  "# You can edit LANGUAGE, NAME, DEFAULT and AUTOSELECT in audios and subtitles ✔️\n# ⚠️ Please don't change other fields if you don't know ⚠️\n# Above 2 comments can be removed ⬆️";
 
 export const createMasterPl = async (
   dir: string,
@@ -161,10 +161,22 @@ export const createMasterPl = async (
     );
 
     const arr = [tags, audioMedia, subMedia, videoMedia];
-    const str = arr.filter((s) => s.trim()).join("\n\n");
+    const str = arr
+      .map((s) => s.trim())
+      .filter((s) => s.trim())
+      .join("\n\n");
     // console.log(arr);
 
     writeFileSync(`${dir}/master.m3u8`, str);
+
+    // Open in code master file
+    console.log("Your master file is created ✅");
+    console.log("Open ➡️ ", `${dir}/master.m3u8`);
+    await new Promise((res, rej) => {
+      exec(`code ${dir}/master.m3u8`, (err, stdout, stderr) => {
+        res(true);
+      });
+    });
   } catch (err) {
     console.log("Error creating master playlist :", err);
   }
