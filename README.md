@@ -10,6 +10,7 @@ A Node.js script that converts any video file into an HLS (HTTP Live Streaming) 
   - Audio
   - Subtitles
 - Hardware acceleration support (AMD, NVIDIA, Intel)
+- External support for Mac M CPUs via **[Brew](https://brew.sh/)**
 - Uses `FFmpeg` under the hood
 - Simple commands to generate metadata, convert, or run both steps in sequence
 
@@ -29,6 +30,8 @@ A Node.js script that converts any video file into an HLS (HTTP Live Streaming) 
 >   - `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`
 > - FFMPEG install via bew
 >   - `brew install ffmpeg`
+
+> You can check support via `ffmpeg -hwaccels` and `ffmpeg -encoders`
 
 - **Node.js** v22 or later
 - `npm` or `yarn`
