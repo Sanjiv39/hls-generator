@@ -21,6 +21,14 @@ A Node.js script that converts any video file into an HLS (HTTP Live Streaming) 
   - `vaapi` or `qsv` (Intel)
   - `nvenc` (NVIDIA)
   - `amf` (AMD)
+  - `videotoolbox` (MAC - M series)
+
+> Mac M cpus only support externally via brew
+>
+> - Install brew if not already
+>   - `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`
+> - FFMPEG install via bew
+>   - `brew install ffmpeg`
 
 - **Node.js** v22 or later
 - `npm` or `yarn`
@@ -41,6 +49,7 @@ npm i
 ```
 
 ## 🕹️ Process
+
 1. Generate `metadata.json` from input file
 
 ```bash

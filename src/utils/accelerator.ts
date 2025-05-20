@@ -6,6 +6,7 @@ import {
   generalAccelerators,
   intelAccelerators,
   nvidiaAccelerators,
+  macAccelerators,
 } from "../types/config-types.js";
 import { devices } from "./presets.js";
 
@@ -40,6 +41,9 @@ export const getValidAccelerator = <D extends Device>(
         (device === "amd" &&
           // @ts-ignore
           (amdAccelerators as string[]).includes(accelerator)) ||
+        (device === "mac" &&
+          // @ts-ignore
+          (macAccelerators as string[]).includes(accelerator)) ||
         (device === "intel" &&
           // @ts-ignore
           (intelAccelerators as string[]).includes(accelerator))) &&

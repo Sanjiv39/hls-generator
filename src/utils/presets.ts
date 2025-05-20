@@ -40,7 +40,13 @@ export const intelPresets: IntelPresets[] = [
   "veryslow",
 ] as const;
 
-export const devices: Device[] = ["amd", "intel", "nvidia", "none"] as const;
+export const devices: Device[] = [
+  "amd",
+  "intel",
+  "nvidia",
+  "none",
+  "mac",
+] as const;
 
 export const getValidPreset = <T extends Device = "none">(
   device = "none" as T,

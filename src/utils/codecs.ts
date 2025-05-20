@@ -5,8 +5,11 @@ import {
   AudioCodec,
   audioCodecs,
   Device,
+  generalVideoCodecs,
   IntelCodec,
   intelCodecs,
+  MacCodec,
+  macCodecs,
   NvidiaCodec,
   nvidiaCodecs,
   VideoCodec,
@@ -38,7 +41,9 @@ export const getValidVideoCodec = <D extends Device>(
     const valid =
       (((device === "nvidia" && nvidiaCodecs.includes(codec as NvidiaCodec)) ||
         (device === "amd" && amdCodecs.includes(codec as AMDCodec)) ||
-        (device === "intel" && intelCodecs.includes(codec as IntelCodec))) &&
+        (device === "intel" && intelCodecs.includes(codec as IntelCodec)) ||
+        (device === "mac" && macCodecs.includes(codec as MacCodec)) ||
+        generalVideoCodecs.includes(codec as VideoCodec<"none">)) &&
         (codec as VideoCodec<D>)) ||
       "libx264";
     return valid;

@@ -2,7 +2,7 @@
  * @description Hardware device that can encode or decode
  * @default "none"
  */
-export type Device = "nvidia" | "amd" | "intel" | "none";
+export type Device = "nvidia" | "amd" | "intel" | "mac" | "none";
 
 // @ts-ignore
 type Mutable<T> = T extends readonly (infer U) ? U : T;
@@ -43,6 +43,7 @@ export type Presets<D extends Device = "none"> = D extends "nvidia"
 export const nvidiaAccelerators = ["cuda", "cuvid", "nvdec"] as const;
 export const amdAccelerators = ["dxva2"] as const;
 export const intelAccelerators = ["qsv", "vaapi"] as const;
+export const macAccelerators = ["videotoolbox"] as const;
 export const generalAccelerators = [
   "d3d11va",
   "opencl",
@@ -53,23 +54,31 @@ export const generalAccelerators = [
 export type NvidiaAccelerator = (typeof nvidiaAccelerators)[number];
 export type AMDAccelerator = (typeof amdAccelerators)[number];
 export type IntelAccelerator = (typeof intelAccelerators)[number];
+export type MacAccelerator = (typeof macAccelerators)[number];
 export type GeneralAccelerator = (typeof generalAccelerators)[number];
 export type Accelerator<D extends Device = "none"> =
   | (D extends "nvidia"
       ? NvidiaAccelerator
       : D extends "amd"
       ? AMDAccelerator
-      : IntelAccelerator)
+      : D extends "mac"
+      ? MacAccelerator
+      : D extends "intel"
+      ? IntelAccelerator
+      : GeneralAccelerator)
   | GeneralAccelerator;
 
 // Codecs
 export const nvidiaCodecs = ["h264_nvenc", "hevc_nvenc", "av1_nvenc"] as const;
 export const amdCodecs = ["h264_amf", "hevc_amf", "av1_amf"] as const;
 export const intelCodecs = ["h264_qsv", "hevc_qsv", "av1_qsv"] as const;
+export const macCodecs = ["h264_videotoolbox", "hevc_videotoolbox"] as const;
+export const generalVideoCodecs = ["libx264", "libx265"] as const;
 
 export type NvidiaCodec = (typeof nvidiaCodecs)[number];
 export type AMDCodec = (typeof amdCodecs)[number];
 export type IntelCodec = (typeof intelCodecs)[number];
+export type MacCodec = (typeof macCodecs)[number];
 
 /** @description Encoder Video codec based on encoder-device */
 export type VideoCodec<D extends Device = "none"> =
@@ -79,6 +88,8 @@ export type VideoCodec<D extends Device = "none"> =
       ? AMDCodec
       : D extends "intel"
       ? IntelCodec
+      : D extends "mac"
+      ? MacCodec
       : never)
   | "libx264"
   | "libx265";
@@ -180,7 +191,7 @@ export type Config<D extends Device = "none"> = {
    * @description Number of threads of CPU to be used. Don't pass if GPU
    * @default undefined
    */
-  threads: (D extends "intel" | "amd" ? number : undefined) | undefined;
+  threads: (D extends "intel" | "amd" | "mac" ? number : undefined) | undefined;
   /**
    * @description Do chunk video or not if present any
    * @default true

@@ -541,20 +541,13 @@ const generateOutput = async () => {
         undefined,
       crf:
         (config.decodingDevice === "intel" &&
-          typeof config.crf === "number" &&
-          !Number.isNaN(config.crf) &&
-          Number.isFinite(config.crf) &&
-          config.crf > 0 &&
-          config.crf) ||
+          validateNumber(config.crf, { defaultValue: undefined })) ||
         undefined,
       threads:
         ((config.decodingDevice === "intel" ||
-          config.decodingDevice === "amd") &&
-          typeof config.threads === "number" &&
-          !Number.isNaN(config.threads) &&
-          Number.isFinite(config.threads) &&
-          config.threads > 0 &&
-          config.threads) ||
+          config.decodingDevice === "amd" ||
+          config.decodingDevice === "mac") &&
+          validateNumber(config.threads, { defaultValue: undefined })) ||
         undefined,
     };
 
