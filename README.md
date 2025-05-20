@@ -74,3 +74,10 @@ npm run output
 ```bash
 npm run convert
 ```
+
+## 📗 References
+
+- [Examples](examples/)
+- [Codecs](docs/codecs.md)
+- [Hardware Accelerators](docs/accelerators.md)
+- [Encoder Presets](docs/presets.md)
