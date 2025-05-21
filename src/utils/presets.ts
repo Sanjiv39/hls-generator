@@ -52,7 +52,8 @@ export const devices: Device[] = [
 
 export const getValidPreset = <T extends Device = "none">(
   device = "none" as T,
-  preset?: string | number
+  preset?: string | number,
+  codec: VideoCodec<T | "none"> = "libx264"
 ) => {
   try {
     // @ts-ignore
@@ -91,31 +92,31 @@ export const getValidPreset = <T extends Device = "none">(
             preset > 0 &&
             preset <= 7
           ? `p${preset}`
-          : "p5";
+          : "p4";
       return valid;
     }
-    if (device === "amd") {
-      // @ts-ignore
-      const valid: AMDPresets =
-        // @ts-ignore
-        typeof preset === "string" && amdPresets.includes(preset)
-          ? preset
-          : "balanced";
-      return valid;
-    }
+    // if (device === "amd") {
+    //   // @ts-ignore
+    //   const valid: AMDPresets =
+    //     // @ts-ignore
+    //     typeof preset === "string" && amdPresets.includes(preset)
+    //       ? preset
+    //       : "speed";
+    //   return valid;
+    // }
     if (device === "intel") {
       // @ts-ignore
       const valid: IntelPresets =
         // @ts-ignore
         typeof preset === "string" && intelPresets.includes(preset)
           ? preset
-          : typeof preset === "number" &&
-            !Number.isNaN(preset) &&
-            Number.isFinite(preset) &&
-            preset > 0 &&
-            preset <= 10
-          ? preset
-          : "fast";
+          : // : typeof preset === "number" &&
+            //   !Number.isNaN(preset) &&
+            //   Number.isFinite(preset) &&
+            //   preset > 0 &&
+            //   preset <= 10
+            // ? preset
+            "fast";
       return valid;
     }
     return "fast";
@@ -130,7 +131,7 @@ export const isPresetValid = async (
   preset: string
 ) => {
   try {
-    const grepper = process.platform === "win32" ? "findstr" : "grep"
+    const grepper = process.platform === "win32" ? "findstr" : "grep";
 
     const output = await cmd(`ffmpeg -hide_banner -h encoder="${videoCodec}"`);
     // const output = await cmd(`ffmpeg -hide_banner -encoders | ${grepper} "${videoCodec}"`);
@@ -139,8 +140,6 @@ export const isPresetValid = async (
       .filter((s) => s.trim())
       .map((s) => s.trim());
     console.log(output);
-
-    // if()
 
     const startReg = videoCodec.match(/\_amf$/) ? /\-quality/ : /\-preset/;
 
@@ -175,6 +174,7 @@ export const isPresetValid = async (
         presets: presets,
         preset: preset.trim() || undefined,
         valid: isValid,
+        option: videoCodec.match(/\_amf$/) ? "quality" : "preset",
         defaultPreset: defaultPreset,
         log: available,
       };
@@ -187,5 +187,5 @@ export const isPresetValid = async (
 };
 
 // console.log(getValidPreset("intel"));
-const data = await isPresetValid("h264_vaapi", "");
+const data = await isPresetValid("h264_amf", "");
 console.log(data);
