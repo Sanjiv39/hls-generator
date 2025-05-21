@@ -1,6 +1,6 @@
 import { appendFileSync, existsSync } from "fs";
 import fs from "fs";
-import { spawn } from "child_process";
+import { exec, spawn } from "child_process";
 import { ProgressBar } from "./progress.js";
 
 const progressBar = new ProgressBar(0, {}, {}, { debug: false });
@@ -125,5 +125,28 @@ export const processFfmpegCmd = async (
       progressBar?.bar?.stop();
     } catch (err) {}
     console.log("\n\n");
+  }
+};
+
+export const cmd = async (command: string) => {
+  try {
+    if (typeof command !== "string" || !command.trim()) {
+      throw new Error("Non-empty command required");
+    }
+    const output = await new Promise<string>((res, rej) => {
+      exec(command, (error, stdout, stderr) => {
+        if (error) {
+          rej(error);
+        }
+        if (stderr) {
+          rej(new Error(`STDERR => ${stderr}`));
+        }
+        res(stdout);
+      });
+    });
+    return output;
+  } catch (err) {
+    console.error("Command error :", err);
+    return "";
   }
 };

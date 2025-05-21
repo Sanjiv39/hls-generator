@@ -5,7 +5,7 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "node --loader ts-node/esm",
+    "test": "npx tsx",
     "build": "npx tsc",
     "output-genMeta": "node dist/output.js -- --genMeta true",
     "dev": "nodemon src/index.ts",

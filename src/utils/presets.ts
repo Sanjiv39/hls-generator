@@ -3,7 +3,9 @@ import {
   Device,
   IntelPresets,
   NvidiaPresets,
+  VideoCodec,
 } from "../types/config-types.js";
+import { cmd } from "./spawn.js";
 
 // @ts-ignore
 export const nvidiaPresets: NvidiaPresets[] = Array(7)
@@ -123,4 +125,47 @@ export const getValidPreset = <T extends Device = "none">(
   }
 };
 
+export const isPresetValid = async (
+  videoCodec: VideoCodec<Device>,
+  preset: string
+) => {
+  try {
+    const output = await cmd(`ffmpeg -hide_banner -h encoder="${videoCodec}"`);
+    const arr = output
+      .split("\n")
+      .filter((s) => s.trim())
+      .map((s) => s.trim());
+    console.log(output);
+
+    const start = arr.findIndex((s) => s.match(/\-preset/));
+    const end = arr.findIndex((s, i) => s.match(/\-/) && i > start);
+    if (start >= 0 && end >= 0 && end > start) {
+      console.log(arr.filter((_, i) => i >= start && i <= end));
+
+      const presets = arr
+        .map((s) => s.replace(/ +/g, " "))
+        .filter((s, i) => i > start && i < end && s.match(/^(.+) (.+)/))
+        .map((s) => s.match(/^(^[ \(\)]+) (.+)/)?.[1] || "")
+        .filter((s, i) => s);
+
+      const defaultPreset =
+        arr[start].match(/\(default([^()]+)\)/)?.[1]?.trim() || "";
+      // console.log(presets, defaultPreset, arr[start]);
+      const isValid = presets.includes(preset.trim());
+
+      const data = {
+        presets: presets,
+        preset: preset.trim() || undefined,
+        valid: isValid,
+        defaultPreset: defaultPreset,
+      };
+      return data;
+    }
+    throw new Error("No preset data");
+  } catch (err) {
+    return null;
+  }
+};
+
 // console.log(getValidPreset("intel"));
+console.log(await isPresetValid("h264_nvenc", ""));
