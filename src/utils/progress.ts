@@ -100,7 +100,7 @@ export class ProgressBar {
               }
               return { isValid: false, value: val };
             },
-          }).isValid
+          })?.isValid
         ) {
           const duration = moment.duration(timestamp, "seconds");
           template.stamp = `${duration

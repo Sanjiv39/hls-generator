@@ -3,6 +3,7 @@
  * @default "none"
  */
 export type Device = "nvidia" | "amd" | "intel" | "mac" | "none";
+export const devices: Device[] = ["amd", "intel", "nvidia", "none", "mac"];
 
 // @ts-ignore
 type Mutable<T> = T extends readonly (infer U) ? U : T;
@@ -15,8 +16,7 @@ export type IntelPresets =
   | "medium"
   | "slow"
   | "slower"
-  | "veryslow"
-  | number;
+  | "veryslow";
 
 export type NvidiaPresets =
   | `p${1 | 2 | 3 | 4 | 5 | 6 | 7}`
@@ -74,6 +74,13 @@ export const amdCodecs = ["h264_amf", "hevc_amf", "av1_amf"] as const;
 export const intelCodecs = ["h264_qsv", "hevc_qsv", "av1_qsv"] as const;
 export const macCodecs = ["h264_videotoolbox", "hevc_videotoolbox"] as const;
 export const generalVideoCodecs = ["libx264", "libx265"] as const;
+export const allVideoCodecs = [
+  ...generalVideoCodecs,
+  ...macCodecs,
+  ...intelCodecs,
+  ...amdCodecs,
+  ...nvidiaCodecs,
+];
 
 export type NvidiaCodec = (typeof nvidiaCodecs)[number];
 export type AMDCodec = (typeof amdCodecs)[number];

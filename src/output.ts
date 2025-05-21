@@ -23,14 +23,18 @@ import { ProgressBar } from "./utils/progress.js";
 import { getFittedResolution, calculateAllBitrates } from "./utils/bitrate.js";
 import { getValidPreset } from "./utils/presets.js";
 import { getValidAccelerator } from "./utils/accelerator.js";
-import { getValidAudioCodec, getValidVideoCodec } from "./utils/codecs.js";
+import {
+  getValidAudioCodec,
+  getValidVideoCodec,
+  validateMatchingCodecs,
+} from "./utils/codecs.js";
 import { convertBitsToUnit } from "./utils/bits.js";
 import { validateNumber } from "./utils/number.js";
 import { argsToObject } from "./utils/args.js";
 import { getConfig } from "./utils/config.js";
 // types
 import { FfMetaData, FfOptions } from "./types/ffmpeg.js";
-import { Device, Config } from "./types/config-types.js";
+import { Device, Config, VideoCodec } from "./types/config-types.js";
 // import moment from "moment";
 
 const fileMetaData = await import("../metadata.json", {
@@ -181,7 +185,26 @@ const processVideo = async (
     const userVMappings: Exclude<
       Config<Device>["videoMappings"],
       null | undefined | false
-    > = Array.isArray(config.videoMappings) ? config.videoMappings : [];
+    > = Array.isArray(config.videoMappings)
+      ? config.videoMappings.map((dt) => ({
+          ...dt,
+          res: dt.res?.match(/[0-9]+x[0-9]+/)?.[0],
+          codec:
+            dt.codec === getValidVideoCodec(options.encodingDevice, dt.codec)
+              ? dt.codec
+              : undefined,
+        }))
+      : [];
+
+    const allCodecsValid = validateMatchingCodecs([
+      vCodec,
+      ...userVMappings.map((dt) => dt.codec).filter((c) => c?.trim()),
+    ] as VideoCodec[]);
+    if (!allCodecsValid) {
+      throw new Error(
+        "There are some video codecs that are not supported to work pairly, use codecs available for the same encoding device"
+      );
+    }
 
     const masterFile =
       config.hlsMasterFile?.trim()?.match(/(.| )+[.]m3u8/)?.[0] ||
@@ -532,13 +555,17 @@ const generateOutput = async () => {
       ),
     };
 
+    const presetData = await getValidPreset(
+      config.encodingDevice || "none",
+      config.preset
+    );
+
     // Config options output
     const oOptions: FfOptions<Device> = {
       // encoder settings
-      preset:
-        (config.preset &&
-          getValidPreset(config.encodingDevice || "none", config.preset)) ||
-        undefined,
+      // @ts-ignore Preset
+      [presetData?.option]:
+        (presetData?.option && presetData.value) || undefined,
       crf:
         (config.decodingDevice === "intel" &&
           validateNumber(config.crf, { defaultValue: undefined })) ||

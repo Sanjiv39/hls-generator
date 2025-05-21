@@ -1,10 +1,18 @@
 import {
+  amdCodecs,
   AMDPresets,
   Device,
+  generalVideoCodecs,
+  intelCodecs,
   IntelPresets,
+  macCodecs,
+  nvidiaCodecs,
   NvidiaPresets,
   VideoCodec,
+  devices,
 } from "../types/config-types.js";
+import { getValidVideoCodec } from "./codecs.js";
+import { validateNumber } from "./number.js";
 import { cmd } from "./spawn.js";
 
 // @ts-ignore
@@ -42,96 +50,39 @@ export const intelPresets: IntelPresets[] = [
   "veryslow",
 ] as const;
 
-export const devices: Device[] = [
-  "amd",
-  "intel",
-  "nvidia",
-  "none",
-  "mac",
-] as const;
+export type PresetTag = "preset" | "quality";
 
-export const getValidPreset = <T extends Device = "none">(
-  device = "none" as T,
-  preset?: string | number,
-  codec: VideoCodec<T | "none"> = "libx264"
-) => {
-  try {
-    // @ts-ignore
-    device =
-      (typeof device === "string" && device.trim().toLowerCase()) || null;
-    // @ts-ignore
-    preset =
-      typeof preset === "number"
-        ? preset
-        : typeof preset === "string"
-        ? (preset || "").toLowerCase().trim()
-        : null;
-    if (
-      !device ||
-      // @ts-ignore
-      !devices.includes(device.trim().toLowerCase())
-    ) {
-      throw new Error(
-        `Invalid device, required one of [${devices.join(
-          ", "
-        )}] but got ${device}`,
-        { cause: "invalid-device-type" }
-      );
-    }
-    // @ts-ignore
-    device = device.trim().toLowerCase();
-    if (device === "nvidia") {
-      // @ts-ignore
-      const valid: NvidiaPresets =
-        // @ts-ignore
-        typeof preset === "string" && nvidiaPresets.includes(preset)
-          ? preset
-          : typeof preset === "number" &&
-            !Number.isNaN(preset) &&
-            Number.isFinite(preset) &&
-            preset > 0 &&
-            preset <= 7
-          ? `p${preset}`
-          : "p4";
-      return valid;
-    }
-    // if (device === "amd") {
-    //   // @ts-ignore
-    //   const valid: AMDPresets =
-    //     // @ts-ignore
-    //     typeof preset === "string" && amdPresets.includes(preset)
-    //       ? preset
-    //       : "speed";
-    //   return valid;
-    // }
-    if (device === "intel") {
-      // @ts-ignore
-      const valid: IntelPresets =
-        // @ts-ignore
-        typeof preset === "string" && intelPresets.includes(preset)
-          ? preset
-          : // : typeof preset === "number" &&
-            //   !Number.isNaN(preset) &&
-            //   Number.isFinite(preset) &&
-            //   preset > 0 &&
-            //   preset <= 10
-            // ? preset
-            "fast";
-      return valid;
-    }
-    return "fast";
-  } catch (err) {
-    console.error("Error getting preset :", err);
-    return "";
-  }
-};
+const allCodecs = [
+  ...generalVideoCodecs,
+  ...nvidiaCodecs,
+  ...amdCodecs,
+  ...intelCodecs,
+  ...macCodecs,
+];
 
-export const isPresetValid = async (
+const isPresetValid = async (
   videoCodec: VideoCodec<Device>,
   preset: string
 ) => {
   try {
     const grepper = process.platform === "win32" ? "findstr" : "grep";
+
+    videoCodec = videoCodec.trim().toLowerCase() as VideoCodec<Device>;
+    if (!allCodecs.includes(videoCodec)) {
+      throw new Error(`Invalid video codec [${videoCodec}], not supported`);
+    }
+
+    if (videoCodec.match(/^libx/)) {
+      const data = {
+        presets: [],
+        preset: undefined,
+        valid: false,
+        option: "preset" as PresetTag,
+        defaultPreset: "fast",
+        log: "",
+      };
+      return data;
+    }
 
     const output = await cmd(`ffmpeg -hide_banner -h encoder="${videoCodec}"`);
     // const output = await cmd(`ffmpeg -hide_banner -encoders | ${grepper} "${videoCodec}"`);
@@ -139,7 +90,7 @@ export const isPresetValid = async (
       .split("\n")
       .filter((s) => s.trim())
       .map((s) => s.trim());
-    console.log(output);
+    // console.log(output);
 
     const startReg = videoCodec.match(/\_amf$/) ? /\-quality/ : /\-preset/;
 
@@ -174,7 +125,9 @@ export const isPresetValid = async (
         presets: presets,
         preset: preset.trim() || undefined,
         valid: isValid,
-        option: videoCodec.match(/\_amf$/) ? "quality" : "preset",
+        option: (videoCodec.match(/\_amf$/)
+          ? "quality"
+          : "preset") as PresetTag,
         defaultPreset: defaultPreset,
         log: available,
       };
@@ -186,6 +139,63 @@ export const isPresetValid = async (
   }
 };
 
+export const getValidPreset = async <T extends Device = "none">(
+  device = "none" as T,
+  preset?: (T extends "nvidia" ? number : never) | string,
+  codec: VideoCodec<T | "none"> = "libx264"
+) => {
+  try {
+    const data = {
+      option: "preset" as PresetTag,
+      value: "" as string | undefined,
+    };
+    // @ts-ignore
+    device =
+      (typeof device === "string" && device.trim().toLowerCase()) || null;
+    // @ts-ignore
+    preset =
+      (typeof preset === "number"
+        ? validateNumber<number>(preset, { defaultValue: 0 })
+        : typeof preset === "string"
+        ? (preset || "").toLowerCase().trim()
+        : null) || undefined;
+    preset = typeof preset === "number" ? `p${preset}` : preset;
+
+    if (
+      !device ||
+      // @ts-ignore
+      !devices.includes(device.trim().toLowerCase())
+    ) {
+      throw new Error(
+        `Invalid device, required one of [${devices.join(
+          ", "
+        )}] but got ${device}`,
+        { cause: "invalid-device-type" }
+      );
+    }
+    // @ts-ignore
+    device = device.trim().toLowerCase();
+    codec = getValidVideoCodec(device, codec);
+
+    const check = await isPresetValid(codec, preset as string);
+    data.option = check?.option || "preset";
+    data.value =
+      (check?.valid && check?.preset) || check?.defaultPreset || undefined;
+    if ((!data.value || !check?.valid) && check?.log.trim()) {
+      console.log(
+        "Preset reference for codec [",
+        codec.trim().toLowerCase(),
+        "]\n"
+      );
+      console.log(check.log);
+    }
+    return data;
+  } catch (err) {
+    console.error("Error getting preset :", err);
+    return null;
+  }
+};
+
 // console.log(getValidPreset("intel"));
-const data = await isPresetValid("h264_amf", "");
-console.log(data);
+// const data = await getValidPreset("nvidia", "fast", "hevc_nvenc");
+// console.log(data);
