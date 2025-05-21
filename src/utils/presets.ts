@@ -130,23 +130,41 @@ export const isPresetValid = async (
   preset: string
 ) => {
   try {
+    const grepper = process.platform === "win32" ? "findstr" : "grep"
+
     const output = await cmd(`ffmpeg -hide_banner -h encoder="${videoCodec}"`);
+    // const output = await cmd(`ffmpeg -hide_banner -encoders | ${grepper} "${videoCodec}"`);
     const arr = output
       .split("\n")
       .filter((s) => s.trim())
       .map((s) => s.trim());
     console.log(output);
 
-    const start = arr.findIndex((s) => s.match(/\-preset/));
+    // if()
+
+    const startReg = videoCodec.match(/\_amf$/) ? /\-quality/ : /\-preset/;
+
+    const start = arr.findIndex((s) => s.match(startReg));
     const end = arr.findIndex((s, i) => s.match(/\-/) && i > start);
+
     if (start >= 0 && end >= 0 && end > start) {
-      console.log(arr.filter((_, i) => i >= start && i <= end));
+      // console.log(arr.filter((_, i) => i >= start && i <= end));
 
       const presets = arr
         .map((s) => s.replace(/ +/g, " "))
         .filter((s, i) => i > start && i < end && s.match(/^(.+) (.+)/))
-        .map((s) => s.match(/^(^[ \(\)]+) (.+)/)?.[1] || "")
+        .map((s) => (s.split(" ")[0] || "").trim())
         .filter((s, i) => s);
+      const available = arr
+        .filter((s, i) => i >= start && i < end && s.trim().match(/^.+/))
+        .map((s, i) => {
+          s = s.trim();
+          if (i === 0 && s.match(startReg)) {
+            s = s + "\n" + Array(s.length).fill("-").join("");
+          }
+          return s;
+        })
+        .join("\n");
 
       const defaultPreset =
         arr[start].match(/\(default([^()]+)\)/)?.[1]?.trim() || "";
@@ -158,6 +176,7 @@ export const isPresetValid = async (
         preset: preset.trim() || undefined,
         valid: isValid,
         defaultPreset: defaultPreset,
+        log: available,
       };
       return data;
     }
@@ -168,4 +187,5 @@ export const isPresetValid = async (
 };
 
 // console.log(getValidPreset("intel"));
-console.log(await isPresetValid("h264_nvenc", ""));
+const data = await isPresetValid("h264_vaapi", "");
+console.log(data);
