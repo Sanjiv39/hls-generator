@@ -81,6 +81,18 @@ export const allVideoCodecs = [
   ...amdCodecs,
   ...nvidiaCodecs,
 ];
+export const videoCodecs = {
+  // @ts-ignore
+  nvidia: nvidiaCodecs as VideoCodec<"nvidia">[],
+  // @ts-ignore
+  amd: amdCodecs as VideoCodec<"amd">[],
+  // @ts-ignore
+  intel: intelCodecs as VideoCodec<"intel">[],
+  // @ts-ignore
+  mac: macCodecs as VideoCodec<"mac">[],
+  // @ts-ignore
+  none: generalVideoCodecs as VideoCodec<"none">[],
+};
 
 export type NvidiaCodec = (typeof nvidiaCodecs)[number];
 export type AMDCodec = (typeof amdCodecs)[number];

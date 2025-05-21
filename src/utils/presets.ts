@@ -10,6 +10,8 @@ import {
   NvidiaPresets,
   VideoCodec,
   devices,
+  allVideoCodecs,
+  videoCodecs,
 } from "../types/config-types.js";
 import { getValidVideoCodec } from "./codecs.js";
 import { validateNumber } from "./number.js";
@@ -52,13 +54,7 @@ export const intelPresets: IntelPresets[] = [
 
 export type PresetTag = "preset" | "quality";
 
-const allCodecs = [
-  ...generalVideoCodecs,
-  ...nvidiaCodecs,
-  ...amdCodecs,
-  ...intelCodecs,
-  ...macCodecs,
-];
+const allCodecs = allVideoCodecs;
 
 const isPresetValid = async (
   videoCodec: VideoCodec<Device>,
@@ -199,3 +195,19 @@ export const getValidPreset = async <T extends Device = "none">(
 // console.log(getValidPreset("intel"));
 // const data = await getValidPreset("nvidia", "fast", "hevc_nvenc");
 // console.log(data);
+// for (let i = 0; i < devices.length; i++) {
+//   const device = devices[i];
+//   console.log("Testing for device :", device);
+//   const codecs = videoCodecs[device];
+//   console.log("Codecs :[", codecs, "]");
+//   for (let j = 0; j < codecs.length; j++) {
+//     const codec = codecs[j];
+//     const data = await isPresetValid(codec, "");
+//     console.log("Response for codec [", codec, "]", {
+//       default: data?.defaultPreset,
+//       preset: data?.preset,
+//     });
+//   }
+//   // @ts-ignore
+//   // console.log(await isPresetValid("h264_vaapi", ""));
+// }
