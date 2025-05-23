@@ -6,6 +6,7 @@ out/*
 **/*.mp4
 **/*.m3u8
 **/*.m3u
+**/*test.yaml
 **/*manifest.json
 !templates/**/*.m3u8
 
