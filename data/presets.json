@@ -1,0 +1,173 @@
+{
+  "amd": [
+    {
+      "codec": "h264_amf",
+      "presets": [
+        "speed",
+        "balanced",
+        "quality"
+      ],
+      "defaultPreset": "speed",
+      "option": "quality"
+    },
+    {
+      "codec": "hevc_amf",
+      "presets": [
+        "balanced",
+        "speed",
+        "quality"
+      ],
+      "defaultPreset": "speed",
+      "option": "quality"
+    },
+    {
+      "codec": "av1_amf",
+      "presets": [
+        "balanced",
+        "speed",
+        "quality",
+        "high_quality"
+      ],
+      "defaultPreset": "speed",
+      "option": "quality"
+    }
+  ],
+  "intel": [
+    {
+      "codec": "h264_qsv",
+      "presets": [
+        "veryfast",
+        "faster",
+        "fast",
+        "medium",
+        "slow",
+        "slower",
+        "veryslow",
+        "0"
+      ],
+      "defaultPreset": "0",
+      "option": "preset"
+    },
+    {
+      "codec": "hevc_qsv",
+      "presets": [
+        "veryfast",
+        "faster",
+        "fast",
+        "medium",
+        "slow",
+        "slower",
+        "veryslow",
+        "0"
+      ],
+      "defaultPreset": "0",
+      "option": "preset"
+    },
+    {
+      "codec": "av1_qsv",
+      "presets": [
+        "veryfast",
+        "faster",
+        "fast",
+        "medium",
+        "slow",
+        "slower",
+        "veryslow",
+        "0"
+      ],
+      "defaultPreset": "0",
+      "option": "preset"
+    }
+  ],
+  "nvidia": [
+    {
+      "codec": "h264_nvenc",
+      "presets": [
+        "default",
+        "slow",
+        "medium",
+        "fast",
+        "hp",
+        "hq",
+        "bd",
+        "ll",
+        "llhq",
+        "llhp",
+        "lossless",
+        "losslesshp",
+        "p1",
+        "p2",
+        "p3",
+        "p4",
+        "p5",
+        "p6",
+        "p7"
+      ],
+      "defaultPreset": "p4",
+      "option": "preset"
+    },
+    {
+      "codec": "hevc_nvenc",
+      "presets": [
+        "default",
+        "slow",
+        "medium",
+        "fast",
+        "hp",
+        "hq",
+        "bd",
+        "ll",
+        "llhq",
+        "llhp",
+        "lossless",
+        "losslesshp",
+        "p1",
+        "p2",
+        "p3",
+        "p4",
+        "p5",
+        "p6",
+        "p7"
+      ],
+      "defaultPreset": "p4",
+      "option": "preset"
+    },
+    {
+      "codec": "av1_nvenc",
+      "presets": [
+        "default",
+        "slow",
+        "medium",
+        "fast",
+        "p1",
+        "p2",
+        "p3",
+        "p4",
+        "p5",
+        "p6",
+        "p7"
+      ],
+      "defaultPreset": "p4",
+      "option": "preset"
+    }
+  ],
+  "none": [
+    {
+      "codec": "libx264",
+      "presets": [
+        "fast"
+      ],
+      "defaultPreset": "fast",
+      "option": "preset"
+    },
+    {
+      "codec": "libx265",
+      "presets": [
+        "fast"
+      ],
+      "defaultPreset": "fast",
+      "option": "preset"
+    }
+  ],
+  "mac": []
+}
