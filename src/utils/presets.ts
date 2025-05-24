@@ -6,10 +6,12 @@ import {
   VideoCodec,
   devices,
   allVideoCodecs,
+  videoCodecs,
 } from "../types/config-types.js";
 import { getValidVideoCodec } from "./codecs.js";
 import { validateNumber } from "./number.js";
 import { cmd } from "./spawn.js";
+const { default: presetsData } = await import("../../data/presets.json");
 
 // @ts-ignore
 export const nvidiaPresets: NvidiaPresets[] = Array(7)
@@ -49,6 +51,34 @@ export const intelPresets: IntelPresets[] = [
 export type PresetTag = "preset" | "quality" | "profile";
 
 const allCodecs = allVideoCodecs;
+
+const validateFromPresetsData = (
+  videoCodec: VideoCodec<Device>,
+  preset: string
+) => {
+  try {
+    if (
+      typeof videoCodec !== "string" ||
+      !allVideoCodecs.includes(videoCodec.trim().toLowerCase() as VideoCodec)
+    ) {
+      throw new Error("Invalid video codec");
+    }
+    if (typeof preset !== "string") {
+      throw new Error("Preset must be a string");
+    }
+    preset = preset.trim().toLowerCase();
+    videoCodec = videoCodec.trim().toLowerCase() as VideoCodec<Device>;
+
+    const arr = Object.values(presetsData).flatMap((d) => d);
+    const found =
+      arr.find(
+        (dt) => dt.codec === videoCodec && dt.presets?.includes(preset)
+      ) || null;
+    return found;
+  } catch (err) {
+    return null;
+  }
+};
 
 export const isPresetValid = async (
   videoCodec: VideoCodec<Device>,
@@ -147,15 +177,19 @@ export const getValidPreset = async <T extends Device = "none">(
     };
     // @ts-ignore
     device =
-      (typeof device === "string" && device.trim().toLowerCase()) || null;
+      (typeof device === "string" && device.trim().toLowerCase()) || "none";
     // @ts-ignore
     preset =
-      (typeof preset === "number"
-        ? validateNumber<number>(preset, { defaultValue: 0 })
-        : typeof preset === "string"
-        ? (preset || "").toLowerCase().trim()
-        : null) || undefined;
-    preset = typeof preset === "number" ? `p${preset}` : preset;
+      typeof preset === "number"
+        ? validateNumber<number | string>(preset, {
+            defaultValue: "",
+            validateCountable: device === "nvidia",
+          })
+        : typeof preset === "string" && preset.trim()
+        ? preset.toLowerCase().trim()
+        : "";
+    preset =
+      typeof preset === "number" && device === "nvidia" ? `p${preset}` : preset;
 
     if (
       !device ||
@@ -172,6 +206,13 @@ export const getValidPreset = async <T extends Device = "none">(
     // @ts-ignore
     device = device.trim().toLowerCase();
     codec = getValidVideoCodec(device, codec);
+
+    const existing = validateFromPresetsData(codec, preset as string);
+    if (existing?.option) {
+      data.option = existing.option as PresetTag;
+      data.value = preset as string;
+      return;
+    }
 
     const check = await isPresetValid(codec, preset as string);
     data.option = check?.option || "preset";

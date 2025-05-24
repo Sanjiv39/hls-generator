@@ -2,32 +2,19 @@
   "amd": [
     {
       "codec": "h264_amf",
-      "presets": [
-        "speed",
-        "balanced",
-        "quality"
-      ],
+      "presets": ["speed", "balanced", "quality"],
       "defaultPreset": "speed",
       "option": "quality"
     },
     {
       "codec": "hevc_amf",
-      "presets": [
-        "balanced",
-        "speed",
-        "quality"
-      ],
+      "presets": ["balanced", "speed", "quality"],
       "defaultPreset": "speed",
       "option": "quality"
     },
     {
       "codec": "av1_amf",
-      "presets": [
-        "balanced",
-        "speed",
-        "quality",
-        "high_quality"
-      ],
+      "presets": ["balanced", "speed", "quality", "high_quality"],
       "defaultPreset": "speed",
       "option": "quality"
     }
@@ -80,35 +67,19 @@
     },
     {
       "codec": "h264_vaapi",
-      "presets": [
-        "constrained_baseline",
-        "main",
-        "high",
-        "high10",
-        "-99"
-      ],
+      "presets": ["constrained_baseline", "main", "high", "high10", "-99"],
       "defaultPreset": "-99",
       "option": "profile"
     },
     {
       "codec": "hevc_vaapi",
-      "presets": [
-        "main",
-        "main10",
-        "rext",
-        "-99"
-      ],
+      "presets": ["main", "main10", "rext", "-99"],
       "defaultPreset": "-99",
       "option": "profile"
     },
     {
       "codec": "av1_vaapi",
-      "presets": [
-        "main",
-        "high",
-        "professional",
-        "-99"
-      ],
+      "presets": ["main", "high", "professional", "-99"],
       "defaultPreset": "-99",
       "option": "profile"
     }
@@ -188,17 +159,13 @@
   "none": [
     {
       "codec": "libx264",
-      "presets": [
-        "fast"
-      ],
+      "presets": ["fast"],
       "defaultPreset": "fast",
       "option": "preset"
     },
     {
       "codec": "libx265",
-      "presets": [
-        "fast"
-      ],
+      "presets": ["fast"],
       "defaultPreset": "fast",
       "option": "preset"
     }
