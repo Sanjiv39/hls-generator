@@ -77,6 +77,40 @@
       ],
       "defaultPreset": "0",
       "option": "preset"
+    },
+    {
+      "codec": "h264_vaapi",
+      "presets": [
+        "constrained_baseline",
+        "main",
+        "high",
+        "high10",
+        "-99"
+      ],
+      "defaultPreset": "-99",
+      "option": "profile"
+    },
+    {
+      "codec": "hevc_vaapi",
+      "presets": [
+        "main",
+        "main10",
+        "rext",
+        "-99"
+      ],
+      "defaultPreset": "-99",
+      "option": "profile"
+    },
+    {
+      "codec": "av1_vaapi",
+      "presets": [
+        "main",
+        "high",
+        "professional",
+        "-99"
+      ],
+      "defaultPreset": "-99",
+      "option": "profile"
     }
   ],
   "nvidia": [

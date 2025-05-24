@@ -54,3 +54,12 @@ for (let i = 0; i < devices.length; i++) {
 }
 console.log(presetsData);
 writeFileSync("./data/presets.json", JSON.stringify(presetsData, null, 2));
+
+const vaapiCodecs = videoCodecs.nvidia.map((s) =>
+  s.replace(/[_]nvenc/, "_vaapi")
+);
+// for (let i = 0; i < vaapiCodecs.length; i++) {
+//   const codec = vaapiCodecs[i];
+//   const data = await isPresetValid(codec as VideoCodec, "");
+//   console.log(data);
+// }

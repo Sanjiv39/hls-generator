@@ -46,7 +46,7 @@ export const intelPresets: IntelPresets[] = [
   "veryslow",
 ] as const;
 
-export type PresetTag = "preset" | "quality";
+export type PresetTag = "preset" | "quality" | "profile";
 
 const allCodecs = allVideoCodecs;
 
@@ -82,7 +82,11 @@ export const isPresetValid = async (
       .map((s) => s.trim());
     // console.log(output);
 
-    const startReg = videoCodec.match(/\_amf$/) ? /\-quality/ : /\-preset/;
+    const startReg = videoCodec.match(/\_amf$/)
+      ? /\-quality/
+      : videoCodec.match(/\_vaapi$/)
+      ? /\-profile/
+      : /\-preset/;
 
     const start = arr.findIndex((s) => s.match(startReg));
     const end = arr.findIndex((s, i) => s.match(/\-/) && i > start);
@@ -117,6 +121,8 @@ export const isPresetValid = async (
         valid: isValid,
         option: (videoCodec.match(/\_amf$/)
           ? "quality"
+          : videoCodec.match(/\_vaapi$/)
+          ? "profile"
           : "preset") as PresetTag,
         defaultPreset: defaultPreset,
         log: available,
