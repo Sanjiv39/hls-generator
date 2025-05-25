@@ -77,7 +77,7 @@ npm run output
 
 #### OR
 
-3. Process above processes consecutively
+3. Process above processes sequentially
 
 ```bash
 npm run convert

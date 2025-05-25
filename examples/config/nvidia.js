@@ -12,12 +12,4 @@ export const config = {
   encodingDevice: "nvidia",
   decodingDevice: "nvidia",
   preset: "p4",
-  hlsMasterFile: "",
-  segment: "",
-  videoSegment: "",
-  audioSegment: "",
-  videoSingleM3u8: "",
-  audioSingleM3u8: "",
-  videoMappings: null,
-  audioMappings: null,
 };
