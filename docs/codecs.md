@@ -1,12 +1,12 @@
 ## 🎞️ Supported Video Codecs
 
-| **Platform**       | **Codecs**                               |
-| ------------------ | ---------------------------------------- |
-| NVIDIA             | `h264_nvenc`, `hevc_nvenc`, `av1_nvenc`  |
-| AMD                | `h264_amf`, `hevc_amf`, `av1_amf`        |
-| Intel              | `h264_qsv`, `hevc_qsv`, `av1_qsv`        |
-| Mac M Series       | `h264_videotoolbox`, `hevc_videotoolbox` |
-| General (Software) | `libx264`, `libx265`                     |
+| **Platform**       | **Codecs**                                                                 |
+| ------------------ | -------------------------------------------------------------------------- |
+| NVIDIA             | `h264_nvenc`, `hevc_nvenc`, `av1_nvenc`                                    |
+| AMD                | `h264_amf`, `hevc_amf`, `av1_amf`                                          |
+| Intel              | `h264_qsv`, `hevc_qsv`, `av1_qsv`, `h264_vaapi`, `hevc_vaapi`, `av1_vaapi` |
+| Mac M Series       | `h264_videotoolbox`, `hevc_videotoolbox`                                   |
+| General (Software) | `libx264`, `libx265`                                                       |
 
 ## ✅ Notes
 
