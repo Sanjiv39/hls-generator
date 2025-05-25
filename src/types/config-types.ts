@@ -207,7 +207,7 @@ export type Config<D extends Device = "none"> = {
    * @description Video encoding preset type depending on quality and speed
    * @default undefined
    */
-  preset: Presets<Device> | undefined;
+  preset: string | number | undefined;
   /**
    * @description CRF speed of device decoding only if it is intel. Otherwise ignores
    * @default undefined
