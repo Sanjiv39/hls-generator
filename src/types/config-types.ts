@@ -71,7 +71,14 @@ export type Accelerator<D extends Device = "none"> =
 // Codecs
 export const nvidiaCodecs = ["h264_nvenc", "hevc_nvenc", "av1_nvenc"] as const;
 export const amdCodecs = ["h264_amf", "hevc_amf", "av1_amf"] as const;
-export const intelCodecs = ["h264_qsv", "hevc_qsv", "av1_qsv"] as const;
+export const intelCodecs = [
+  "h264_qsv",
+  "hevc_qsv",
+  "av1_qsv",
+  "h264_vaapi",
+  "hevc_vaapi",
+  "av1_vaapi",
+] as const;
 export const macCodecs = ["h264_videotoolbox", "hevc_videotoolbox"] as const;
 export const generalVideoCodecs = ["libx264", "libx265"] as const;
 export const allVideoCodecs = [
@@ -200,7 +207,7 @@ export type Config<D extends Device = "none"> = {
    * @description Video encoding preset type depending on quality and speed
    * @default undefined
    */
-  preset: Presets<Device> | undefined;
+  preset: string | number | undefined;
   /**
    * @description CRF speed of device decoding only if it is intel. Otherwise ignores
    * @default undefined

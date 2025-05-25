@@ -13,6 +13,7 @@
     "output": "npx tsx src/output.ts",
     "m3u": "npx tsx src/m3u.ts",
     "convert": "npm run input && npm run output",
+    "test-presets": "npx tsx src/test/presets.ts",
     "dev-test": "nodemon -- ",
     "dev-input": "nodemon src/input.ts",
     "dev-output": "nodemon src/output.ts",

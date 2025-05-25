@@ -41,7 +41,7 @@ A Node.js script that converts any video file into an HLS (HTTP Live Streaming) 
 
 > You can check support via `ffmpeg -hwaccels` and `ffmpeg -encoders`
 
-- **Node.js** v22 or later
+- **Node.js** v20 or later
 - `npm` or `yarn`
 
 ## 📦 Installation
@@ -77,7 +77,7 @@ npm run output
 
 #### OR
 
-3. Process above processes consecutively
+3. Process above processes sequentially
 
 ```bash
 npm run convert

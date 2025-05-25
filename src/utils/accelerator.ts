@@ -7,8 +7,8 @@ import {
   intelAccelerators,
   nvidiaAccelerators,
   macAccelerators,
+  devices,
 } from "../types/config-types.js";
-import { devices } from "./presets.js";
 
 export const getValidAccelerator = <D extends Device>(
   device = "none" as D,
