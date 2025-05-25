@@ -14,4 +14,4 @@ node_modules/*
 dist/*
 config.js
 metadata.json
-command.sh
+**/*.sh
