@@ -114,7 +114,7 @@ export const isPresetValid = async (
 
     const startReg = videoCodec.match(/\_amf$/)
       ? /\-quality/
-      : videoCodec.match(/\_vaapi$/)
+      : videoCodec.match(/\_(vaapi|videotoolbox)$/)
       ? /\-profile/
       : /\-preset/;
 
@@ -151,7 +151,7 @@ export const isPresetValid = async (
         valid: isValid,
         option: (videoCodec.match(/\_amf$/)
           ? "quality"
-          : videoCodec.match(/\_vaapi$/)
+          : videoCodec.match(/\_(vaapi|videotoolbox)$/)
           ? "profile"
           : "preset") as PresetTag,
         defaultPreset: defaultPreset,

@@ -170,5 +170,26 @@
       "option": "preset"
     }
   ],
-  "mac": []
+  "mac": [
+    {
+      "codec": "h264_videotoolbox",
+      "presets": [
+        "baseline",
+        "constrained_baseline",
+        "main",
+        "high",
+        "constrained_high",
+        "extended",
+        "-99"
+      ],
+      "defaultPreset": "-99",
+      "option": "profile"
+    },
+    {
+      "codec": "hevc_videotoolbox",
+      "presets": ["main", "main10", "-99"],
+      "defaultPreset": "-99",
+      "option": "profile"
+    }
+  ]
 }
